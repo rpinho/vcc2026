@@ -1,0 +1,1825 @@
+"""Build a 2026 submission end to end: emitter -> out-of-core h5ad -> .vcc.
+
+    uv run python -m sidechain.submit.build --challenge-config challenges/vcc2026/config.yaml \
+        --emitter delta-transfer --h1-cache ./data/sidechain/cache/vcc2026/h1_pseudobulk.npz \
+        --gwps-cache ./data/sidechain/cache/vcc2026/k562_gwps_targets_pseudobulk.npz \
+        --out ./data/sidechain/vcc2026/submissions/r1_delta_v1
+
+Emitters (cells are integer counts at the target context's depth; --dispersion picks
+Poisson or minimum-variance "even" cells, and --emit-lambda replaces both with one dial
+between them -- count_emitters.PoissonEmitter):
+  control-null     the context's control profile, no shift. A pipeline check; scores ~-0.3
+                   because it calls no DE genes (fid charges silence).
+  h1-mean-shift    one generic shift for every perturbation: the mean over the 300 H1
+                   perturbations of their log2 fold change vs H1 controls. Rung 0b, transferred.
+  delta-transfer   per-target log2 fold change pooled (inverse-variance, per gene) over the
+                   sources that perturbed that gene -- K562 genome-wide and H1 -- re-anchored on
+                   the target context's control profile. Targets no source covers fall back to
+                   the H1 mean shift. Rung 1'.
+
+`--source` adds a pseudobulk corpus beyond the two named caches, as `.npz:control_label`
+(repeatable) -- the same syntax `sidechain.eval.loco` takes, so an arm scored on the mirror
+is submitted with the identical source list. `--shrink-source` adds one whose transferred
+log2FCs are shrunk no matter what `--no-shrink` says -- the depth-aware split between deep
+essential-scale arms and genome-wide arms (see `pooled_delta`). `--lfc-source` adds a corpus that publishes the
+contrast already taken instead of cells (Feng 2026), built by
+`python -m sidechain.data.lfc_table`. It pools identically; it just derives its per-gene
+variance from an adjusted p-value rather than from CPM spread, and abstains (zero weight) on
+genes whose p-value has saturated.
+
+`--shrink-k`, `--shrink-stage` and `--shrink-rule` move the shrinkage of transferred log2FCs
+off its default (the garrote at one standard error, per source): a harder threshold, the rule
+applied once to the pooled vector instead of to each source, or the adaptive rule in place of
+the garrote (see `shrink`, `pooled_delta` and `sidechain.models.adaptive_shrink`). The same
+three flags are on `sidechain.eval.loco`.
+
+`--neighbour-table`, `--neighbour-pool`, `--neighbour-k` and `--neighbour-w` fuse each target's
+pooled delta with the mean delta of its k nearest neighbours in a gene table (T103; the geometry
+gate's `cross`-mode fusion, `sidechain.models.neighbour_arm`). Off unless `--neighbour-w` > 0.
+`--neighbour-size median` lets the neighbourhood's own response size set how hard it pulls;
+`unit` (the default) is the gate's blend, bit-identical. `--neighbour-select` chooses WHICH k
+pool members are averaged: `table` (the default) is the table's k nearest, `hybrid` the table's
+`--neighbour-cand` nearest re-ranked by how alike they respond in the sources, `response` and
+`euclid` the whole pool ranked by response direction or distance; `--neighbour-picks` hands in
+a declared pick per target instead (a JSON built from the same sources as the pool, which has to
+name every target the build fuses and rules out a moved `--neighbour-select`).
+
+`--limit-perts N` builds a small panel (first N perturbations) and writes a matching
+pert_counts CSV so `vcc prep --dry-run --perts <that>` can validate the layout locally.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import time
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import yaml
+
+from sidechain.data.lfc_table import LfcTable
+from sidechain.data.loaders import (
+    challenge_contexts,
+    challenge_control_files,
+    challenge_data_dir,
+)
+from sidechain.data.stream_pseudobulk import PseudobulkSums
+from sidechain.models import adaptive_shrink as adaptive_shrink_module
+from sidechain.models.adaptive_shrink import adaptive_shrink
+from sidechain.models.count_emitters import (
+    CONTROL_MIN_LIBSIZE,
+    ContextProfile,
+    PoissonEmitter,
+    log2fc_from_cpm,
+    remap_to_axis,
+)
+from sidechain.submit.variance_model import (
+    RULE_VARIANCES,
+    VarianceModel,
+    add_variance_args,
+    apply_dispersion_fits,
+    check_variance_args,
+    parse_dispersion_fits,
+)
+from sidechain.submit.writer import Contract, SubmissionWriter, pack_vcc, verify_h5ad
+from sidechain.utils.naming import CLAIMS_RE, STEM_RE, check_out_leaf
+from sidechain.utils.paths import resolve_config
+
+LN2 = np.log(2)
+LN2_SQ = LN2**2
+TARGET_SELF_LOG2FC = -2.32  # > 80 % knockdown of the target itself; excluded from scoring, kept for realism
+GAMMA_MULT_FLOOR = 2.0 ** -16  # where the gamma family predicts <= 0 expression, emit ~none instead
+
+
+def gamma_transfer(fc: np.ndarray, ctrl_src_cpm: np.ndarray, ctrl_tgt_cpm: np.ndarray,
+                   gamma: float, pseudocount: float = 1.0,
+                   stats: dict | None = None) -> np.ndarray:
+    """Re-express one source's log2FCs under transfer exponent ``gamma``.
+
+    The emitter replays a delta as ``control * 2^log2FC``, i.e. it assumes the FOLD change is
+    the context-invariant quantity. This is one endpoint of a one-parameter family
+    (private research/ideas/effect-size-from-control-features.md): with
+    ``r_g = (ctrl_tgt_g + 1) / (ctrl_src_g + 1)`` in CPM, the effective multiplier is
+
+        m_g = 1 + (2^fc_g - 1) * r_g^(gamma - 1)
+
+    ``gamma = 1`` is exactly today's emitter (callers skip the call entirely, so the default
+    path stays bit-identical); ``gamma = 0`` transfers the source's ABSOLUTE CPM change
+    instead, added onto the target's controls -- ``(ctrl_src + 1) * (2^fc - 1)`` is exactly
+    ``mean_pert - mean_ctrl`` under the emitter's own pseudocounted fold change.
+
+    Where the target expresses far less than the source, an absolute-change transfer can
+    predict negative expression (m <= 0). That is outside the family's domain; the honest
+    completion is "the gene is emptied", so m is floored at ``GAMMA_MULT_FLOOR`` -- a finite
+    log2FC of -16, effectively zero counts after emission -- rather than passed to ``log2``,
+    whose nan/-inf the emitter would silently repair to "no change" (``_fraction`` maps
+    non-finite shifts to 0.0), turning the strongest predicted silencings into no-ops.
+
+    Genes whose target-side control CPM is unknown (NaN -- the source measures a gene the
+    target axis lacks) get r = 1, which is the identity transform; they are dropped at the
+    remap onto the target axis anyway, so the value never lands.
+    """
+    r = np.where(np.isnan(ctrl_tgt_cpm), 1.0,
+                 (ctrl_tgt_cpm + pseudocount) / (ctrl_src_cpm + pseudocount))
+    mult = 1.0 + np.expm1(fc * np.log(2.0)) * np.power(r, gamma - 1.0)
+    clamped = mult < GAMMA_MULT_FLOOR
+    if stats is not None:
+        stats["gamma_genes_transformed"] = (
+            stats.get("gamma_genes_transformed", 0) + int((~np.isnan(ctrl_tgt_cpm)).sum()))
+        stats["gamma_mult_clamped"] = stats.get("gamma_mult_clamped", 0) + int(clamped.sum())
+    return np.log2(np.maximum(mult, GAMMA_MULT_FLOOR))
+
+
+def _log2fc_with_var(pb: PseudobulkSums, label: str, control: str, pseudocount: float = 1.0,
+                     var_floor: str = "none", log_bias_correct: bool = False,
+                     variance=None, return_shipped: bool = False, stats: dict | None = None):
+    """Per-gene log2FC of mean CPM and its delta-method variance, for one source.
+
+    `variance` (T98; `sidechain.submit.variance_model.SourceVariance`) swaps the two per-cell
+    variances `vi`, `vc` for a model's -- the glmGamPoi-style dispersion curve, the gene's own
+    dispersion, a per-stratum multiplier -- and keeps everything around them: the Poisson floor
+    as a `max` for the dispersion models (their Poisson term IS the floor, so the max only guards
+    the quasi-likelihood form where `theta_sql < 1` would dip under it), the `+ pseudocount`, the
+    `/ ln2^2` and the `n < 2` abstention. It needs `var_floor="poisson"`. `return_shipped=True`
+    also returns the shipped variance, for `--rule-variance shipped`. None is bit-identical.
+
+    Computed ROW-WISE, not by slicing `pb.mean_cpm()` / `pb.var_cpm()`. Those build the whole
+    (labels x genes) matrix and this function needs exactly two of its rows -- which was
+    invisible at 301 labels and fatal at 18,294: on a full-corpus X-Atlas artifact each call
+    allocated ~5.6 GB per matrix, several times over, for two rows of 38,584 floats. Pooling
+    272 targets from two such sources would have asked for hundreds of multi-GB temporaries.
+
+    With `var_floor="none"` the arithmetic is unchanged -- `mean_cpm` and `var_cpm` are
+    defined as exactly these per-row expressions, so this returns bit-identical values (held
+    by `test_row_wise_log2fc_matches_the_whole_matrix_form`).
+
+    `var_floor="poisson"` floors each arm's per-cell CPM variance at its Poisson sampling
+    variance, `(m + pseudocount) * 1e6 / mean_libsize`: observed spread below what counting
+    noise alone would produce is undersampling, not certainty. The `+ pseudocount` keeps
+    never-expressed genes (observed variance exactly 0 at any n) off the pathological
+    max-weight branch. An arm with a single cell has no observed spread at all, so it
+    abstains outright (`var = inf`, weight 0) rather than letting the floor pretend one
+    cell was a measurement.
+
+    `log_bias_correct` removes the SECOND-ORDER term of the same delta method. `log2` of a
+    noisy mean is not the log2 of the true mean: to second order it sits
+    `Var(m_hat) / (2 (m + c)^2 ln2)` BELOW it. The perturbed arm carries a few hundred cells
+    and the control arm tens of thousands, so the two do not cancel inside the contrast, and
+    what is left is a negative shift on every low-expression gene that every target of that
+    source shares. Measured 2026-09-20 (T18 check 6): 1 % of a median H1 delta at 1,071 cells
+    an arm, 9-12 % on X-Atlas and K562-gwps at 145-198. It uses the SAME `vi`/`vc` the
+    variance does, so with `var_floor="poisson"` the correction inherits the floor -- one
+    variance model, not two. Default off: it costs -0.0027 raw `pds` on `loco_k562gwps_pdex`
+    (the shift is shared across targets, and `pds_cosine` discriminates between them), and it
+    is wired so the magnitude members can be scored too.
+    """
+    i, c = pb.labels.index(label), pb.labels.index(control)
+    ni = max(int(pb.n_cells[i]), 1)
+    nc = max(int(pb.n_cells[c]), 1)
+    mi = pb.cpm_sum[i] / ni
+    mc = pb.cpm_sum[c] / nc
+    vi = np.maximum(pb.cpm_sq_sum[i] / ni - mi * mi, 0.0)
+    vc = np.maximum(pb.cpm_sq_sum[c] / nc - mc * mc, 0.0)
+    if var_floor == "poisson":
+        vi = np.maximum(vi, (mi + pseudocount) * 1e6 / (pb.libsize_sum[i] / ni))
+        vc = np.maximum(vc, (mc + pseudocount) * 1e6 / (pb.libsize_sum[c] / nc))
+    fc = log2fc_from_cpm(mi, mc, pseudocount)
+    if log_bias_correct:
+        # + the perturbed arm's downward bias, - the control's: what is left of E[log2 m_hat].
+        # Reads the SHIPPED per-cell variances whatever `variance` says: the correction is a
+        # property of the observed moments, and it is off in every recipe this knob is read on.
+        fc = fc + ((vi / ni) / (mi + pseudocount) ** 2
+                   - (vc / nc) / (mc + pseudocount) ** 2) / (2.0 * LN2)
+    var = (vi / ni) / (mi + pseudocount) ** 2 + (vc / nc) / (mc + pseudocount) ** 2
+    var_shipped = var
+    if variance is not None:
+        if var_floor != "poisson":
+            raise ValueError("a variance model needs var_floor='poisson': its Poisson term is that "
+                             "floor, and under 'none' the two paths would not measure the same thing")
+        si = 1e6 / (pb.libsize_sum[i] / ni)
+        sc = 1e6 / (pb.libsize_sum[c] / nc)
+        vi_m = variance.cell_variance(mi, si, vi, pseudocount, perturbed=True)
+        vc_m = variance.cell_variance(mc, sc, vc, pseudocount, perturbed=False)
+        if variance.floor_max:
+            fi, fcc = (mi + pseudocount) * si, (mc + pseudocount) * sc
+            if stats is not None:
+                stats["variance_floor_bound_gene_arms"] = (
+                    stats.get("variance_floor_bound_gene_arms", 0) + int(((vi_m < fi) | (vc_m < fcc)).sum()))
+            vi_m, vc_m = np.maximum(vi_m, fi), np.maximum(vc_m, fcc)
+        var = (vi_m / ni) / (mi + pseudocount) ** 2 + (vc_m / nc) / (mc + pseudocount) ** 2
+    if var_floor == "poisson" and (ni < 2 or nc < 2):
+        var = np.full_like(var, np.inf)
+        var_shipped = var
+    if return_shipped:
+        return fc, var / LN2_SQ, var_shipped / LN2_SQ
+    return fc, var / LN2_SQ
+
+
+def h1_mean_shift(h1: PseudobulkSums, control: str, axis: np.ndarray) -> np.ndarray:
+    perts = [lab for lab in h1.labels if lab != control]
+    fcs = np.stack([_log2fc_with_var(h1, p, control)[0] for p in perts])
+    return remap_to_axis(fcs.mean(axis=0), h1.genes, axis)
+
+
+SHRINK_STAGES = ("source", "pooled")
+SHRINK_RULES = ("garrote", "adaptive")
+
+
+def shrink(fc: np.ndarray, var: np.ndarray, k: float = 1.0) -> np.ndarray:
+    """Per-gene positive-part shrinkage of log2FCs toward 0: fc * max(0, 1 - k * var/fc^2).
+
+    A source measures each gene's fold change with its own sampling error; with
+    ~170 cells per K562 target, a gene at 5 CPM carries roughly +-0.5 log2 of pure
+    noise, which would be transferred as if it were signal and charged by the
+    fold-change metric. This is the non-negative garrote (Breiman 1995) with each
+    gene's threshold at sqrt(k) of its own standard errors; the wavelet literature
+    also calls the one-dimensional form James-Stein. At `k = 1`, the default and
+    the rule every entry before T84's sweep carries, a gene whose estimate is
+    within one standard error of zero is set to zero, one at three standard errors
+    keeps 89 % of its value, one at five keeps 96 %. At `k = 8` the zero reaches
+    2.83 standard errors and a gene at four keeps half. A single global normal
+    prior was tried first and erased the real effects too -- they are a few hundred
+    genes among ~8,000 nulls, so any one-variance prior is dominated by the nulls;
+    a mixture prior is `sidechain.models.adaptive_shrink`.
+
+    "Standard error" means the variance this is handed. The Poisson-floored
+    variance of `_log2fc_with_var` is the right size on expressed genes and far
+    too large below about 1 CPM, where the floor's pseudocount sets it, so one `k`
+    is a harder rule there than its name says (T84 step 0, 2026-10-02).
+    """
+    with np.errstate(divide="ignore", invalid="ignore"):
+        factor = np.where(fc != 0, 1.0 - k * var / np.maximum(fc**2, 1e-12), 0.0)
+    return fc * np.clip(factor, 0.0, 1.0)
+
+
+def check_shrink_rule(k: float, stage: str, rule: str) -> None:
+    """Refuse a shrinkage setting that names no model; shared by `pooled_delta` and the flags."""
+    if stage not in SHRINK_STAGES:
+        raise ValueError(f"unknown shrink_stage {stage!r}: expected one of {SHRINK_STAGES}")
+    if rule not in SHRINK_RULES:
+        raise ValueError(f"unknown shrink_rule {rule!r}: expected one of {SHRINK_RULES}")
+    if not (math.isfinite(k) and k > 0):
+        raise ValueError(f"shrink_k must be finite and > 0, got {k}: 0 would switch the rule "
+                         "off, which is what shrinkage=False (--no-shrink) is for")
+    if rule == "adaptive":
+        if stage != "pooled":
+            raise ValueError("shrink_rule='adaptive' is wired after pooling only "
+                             "(shrink_stage='pooled'): per source it reads each source's "
+                             "standard error as exact, and they are not the same size")
+        if k != 1.0:
+            raise ValueError("shrink_k is the garrote's threshold and has no meaning under "
+                             "shrink_rule='adaptive'")
+
+
+def parse_coverage_tiers(spec: str | None) -> tuple[tuple[float, float], ...] | None:
+    """``'3:0.10,10:0.50'`` -> ``((3.0, 0.10), (10.0, 0.50))``; None stays None.
+
+    Each pair is `cut:factor` -- a gene-arm whose `n_eff` is below `cut` has its pooling
+    weight multiplied by `factor`. The pairs are read in order and the first match wins,
+    so cuts must increase; anything at or above the last cut keeps its full weight, which
+    is why the strong tier is never written down.
+    """
+    if spec is None:
+        return None
+    tiers = []
+    for part in spec.split(","):
+        cut, _, factor = part.partition(":")
+        if not factor:
+            raise SystemExit(f"--coverage-tiers: {part!r} is not cut:factor, e.g. '3:0.10'")
+        tiers.append((float(cut), float(factor)))
+    cuts = [c for c, _ in tiers]
+    if cuts != sorted(cuts) or len(set(cuts)) != len(cuts):
+        raise SystemExit(f"--coverage-tiers: cut points must strictly increase, got {cuts}")
+    for cut, factor in tiers:
+        if cut <= 0:
+            raise SystemExit(f"--coverage-tiers: cut {cut} must be positive")
+        # A zero factor is refused, not clamped. It would zero the denominator on genes
+        # every source calls weak, and the pooled delta comes out 0 -- which the emitter
+        # replays as "no change" and `fid` charges as silence. The whole point of a tier
+        # is that thin evidence is outvoted where better evidence exists and still used
+        # where none does.
+        if not 0 < factor <= 1:
+            raise SystemExit(f"--coverage-tiers: factor {factor} must be in (0, 1]; a factor "
+                             "of 0 silences genes rather than downweighting them -- use a "
+                             "small positive factor")
+    return tuple(tiers)
+
+
+def parse_transfer_floor(specs: list[str] | None) -> dict[str, float]:
+    """``['h1_pseudobulk=0.0104']`` -> ``{'h1_pseudobulk': 0.0104}``; None/[] -> ``{}``.
+
+    Keyed by the source file's basename stem rather than by position, because the pool's
+    order is a command-line accident and a floor attached to the wrong source is silently
+    wrong rather than loud. `apply_transfer_floors` refuses a key that matches no source.
+    """
+    out: dict[str, float] = {}
+    for part in specs or []:
+        name, _, value = part.partition("=")
+        if not value:
+            raise SystemExit(f"--transfer-floor: {part!r} is not NAME=TAU2, e.g. "
+                             "'h1_pseudobulk=0.0104'")
+        try:
+            tau2 = float(value)
+        except ValueError:
+            raise SystemExit(f"--transfer-floor: {value!r} is not a number") from None
+        if tau2 < 0:
+            raise SystemExit(f"--transfer-floor: tau^2 {tau2} must be >= 0 (it is a variance)")
+        if name in out:
+            raise SystemExit(f"--transfer-floor: {name!r} given twice")
+        out[name] = tau2
+    return out
+
+
+def apply_transfer_floors(sources: list, floors: dict[str, float]) -> list:
+    """Attach each ``NAME=TAU2`` to the source whose file stem is NAME.
+
+    Matching is on the stem recorded by `sources_from_specs`. A key matching no source is a
+    hard error: the alternative is a run that silently pools uncalibrated weights while its
+    `build.json` claims otherwise, which is exactly the class of quiet wrongness the
+    exact-match rule in `ingest/checks.py` exists to prevent.
+    """
+    if not floors:
+        return sources
+    seen = {}
+    for src in sources:
+        obj = src[0] if isinstance(src, tuple) else src
+        name = getattr(obj, "sidechain_name", None)
+        if name is not None:
+            seen[name] = src
+    missing = sorted(set(floors) - set(seen))
+    if missing:
+        raise SystemExit(
+            f"--transfer-floor names {missing} match no source; have {sorted(seen)}. "
+            "The floor is per source and attaching it to the wrong one is silently wrong."
+        )
+    for name, tau2 in floors.items():
+        src = seen[name]
+        obj = src[0] if isinstance(src, tuple) else src
+        obj.transfer_floor = tau2
+    return sources
+
+
+def coverage_factor(n_eff: np.ndarray, tiers: tuple[tuple[float, float], ...]) -> np.ndarray:
+    """Per-gene weight multiplier from the evidence behind each gene.
+
+    `n_eff` is how many cells' worth of evidence sits behind that gene in that arm (see
+    `PseudobulkSums.n_eff`). Genes below the first cut get the first factor, and so on;
+    genes above the last cut keep their full weight.
+    """
+    out = np.ones_like(n_eff, dtype=np.float64)
+    for cut, factor in reversed(tiers):
+        out = np.where(n_eff < cut, factor, out)
+    return out
+
+
+class _PseudobulkDeltaSource:
+    """Adapts `(PseudobulkSums, control_label)` to the `effect(target)` shape.
+
+    Exists so `pooled_delta` iterates one kind of thing. Sources that ship
+    counts and sources that ship a precomputed contrast then differ only in how
+    they answer "what is this target's fold change and how well is it known",
+    which is the only question the pooling actually asks.
+
+    `shrink` is this source's own position of the shrinkage knob: None defers
+    to `pooled_delta`'s global flag (every historical call), True/False
+    overrides it for this source alone. Per source because the right setting
+    depends on what the arm measured: a deep essential-scale arm estimates its
+    small effects well, so shrinking it only removes noise, while a
+    genome-wide arm's small effects are the direction signal shrinkage would
+    delete.
+    """
+
+    __slots__ = ("control", "log_bias_correct", "pb", "shrink", "var_floor", "variance_model")
+
+    def __init__(self, pb: PseudobulkSums, control: str, shrink: bool | None = None,
+                 var_floor: str = "none", log_bias_correct: bool = False,
+                 variance_model: VarianceModel | None = None):
+        # Refused, not coerced: the third tuple slot sits beside var_floor in
+        # this signature, and a stray string there ('poisson') would otherwise
+        # silently force shrinkage ON -- crash-to-wrong is the bad direction.
+        if shrink is not None and not isinstance(shrink, bool):
+            raise TypeError(f"shrink must be None, True or False, got {shrink!r} "
+                            "-- var_floor is keyword-only in the tuple form")
+        self.pb, self.control, self.var_floor = pb, control, var_floor
+        self.shrink, self.log_bias_correct = shrink, log_bias_correct
+        # T98: None or `shipped` is the historical path. The per-source variance function is
+        # built once per source and model and cached on the artifact (`VarianceModel.for_source`).
+        self.variance_model = (None if variance_model is None or variance_model.is_shipped
+                               else variance_model)
+
+    def _variance(self):
+        if self.variance_model is None:
+            return None
+        return self.variance_model.for_source(self.pb, self.control)
+
+    @property
+    def genes(self) -> np.ndarray:
+        return self.pb.genes
+
+    @property
+    def transfer_floor(self) -> float:
+        """This source's tau^2, carried on the underlying `PseudobulkSums`.
+
+        Read through rather than stored, because `as_delta_source` rebuilds this wrapper on
+        every `pooled_delta` call while the floor is attached once, to the artifact.
+        """
+        return float(getattr(self.pb, "transfer_floor", 0.0))
+
+    def control_cpm(self) -> np.ndarray:
+        """Mean per-cell CPM of this source's own control arm, on its own gene axis --
+        the ``ctrl_src`` the transfer exponent (gamma) compares the target's controls to."""
+        c = self.pb.labels.index(self.control)
+        return self.pb.cpm_sum[c] / max(int(self.pb.n_cells[c]), 1)
+
+    def effect(self, target: str, stats: dict | None = None):
+        if target not in self.pb.labels:
+            return None
+        return _log2fc_with_var(self.pb, target, self.control, var_floor=self.var_floor,
+                                log_bias_correct=self.log_bias_correct,
+                                variance=self._variance(), stats=stats)
+
+    def effect_pair(self, target: str, stats: dict | None = None):
+        """`(fc, var, var_shipped)`: the model's variance and the shipped one, for `--rule-variance`."""
+        if target not in self.pb.labels:
+            return None
+        return _log2fc_with_var(self.pb, target, self.control, var_floor=self.var_floor,
+                                log_bias_correct=self.log_bias_correct,
+                                variance=self._variance(), return_shipped=True, stats=stats)
+
+    def n_eff(self, target: str) -> np.ndarray | None:
+        """Cells' worth of evidence behind each gene of this contrast, on this source's axis.
+
+        The WEAKER of the two arms, because the estimate is a difference: a gene the
+        control barely saw is as poorly known as one the perturbation barely saw.
+
+        Only sources built from cells can answer this. An `LfcTable` publishes a contrast
+        with no cells behind it, defines no `n_eff`, and is therefore left at full weight
+        by `pooled_delta` -- its abstention already comes from its p-values.
+        """
+        if target not in self.pb.labels:
+            return None
+        i, c = self.pb.labels.index(target), self.pb.labels.index(self.control)
+        return np.minimum(self.pb.n_eff(i), self.pb.n_eff(c))
+
+
+def as_delta_source(src, var_floor: str = "none", log_bias_correct: bool = False,
+                    variance_model: VarianceModel | None = None):
+    """Normalise a source into something with `.genes` and `.effect(target)`.
+
+    Accepts the historical `(PseudobulkSums, control_label)` tuple so every
+    existing call site and command line keeps working unchanged, and passes an
+    `LfcTable` (or anything else implementing the pair) straight through.
+    A `(PseudobulkSums, control_label, shrink)` triple additionally pins that
+    source's own shrinkage (see `_PseudobulkDeltaSource`); the two-tuple form
+    means "follow the global flag", exactly as before.
+    `var_floor` only reaches the pseudobulk form: an LfcTable's variance comes
+    from a p-value, already carries abstention (`inf`), and has no cell counts
+    to floor against.
+    """
+    if isinstance(src, tuple):
+        return _PseudobulkDeltaSource(*src, var_floor=var_floor,
+                                      log_bias_correct=log_bias_correct,
+                                      variance_model=variance_model)
+    if hasattr(src, "effect") and hasattr(src, "genes"):
+        return src
+    raise TypeError(
+        f"{type(src).__name__} is not a delta source: expected a "
+        "(PseudobulkSums, control_label) tuple or an object with .genes and "
+        ".effect(target) -> (fc, var) | None"
+    )
+
+
+def sources_from_specs(source_specs: list[str], shrink_source_specs: list[str]) -> list:
+    """Parse `--source` / `--shrink-source` NPZ:CONTROL specs into source tuples.
+
+    The one parser for both entry points: `sidechain.eval.loco` and this
+    module's `main` call it instead of splitting the specs themselves, so the
+    two command lines cannot drift and a mirror-scored arm really does submit
+    verbatim. A missing (or empty) control suffix defaults to 'control';
+    `--shrink-source` specs come back as the `(pb, control, True)` triple that
+    pins shrinkage on for that source.
+    """
+    sources = []
+    for spec, shrunk in [(s, False) for s in source_specs] + [(s, True) for s in shrink_source_specs]:
+        path, _, ctrl = spec.rpartition(":")
+        pb = PseudobulkSums.load(path)
+        # The stem is how `--transfer-floor NAME=TAU2` and `--dispersion-fit NAME=PATH` find this
+        # source. Recorded here, at the one place a source is built from a path, so the flags
+        # cannot disagree about what a source is called; the path lets a fit be checked against
+        # the file it was made from.
+        pb.sidechain_name = Path(path).expanduser().stem
+        pb.sidechain_path = Path(path).expanduser()
+        sources.append((pb, ctrl or "control", True) if shrunk else (pb, ctrl or "control"))
+    return sources
+
+
+def control_similarity(ctrl_src: np.ndarray, ctrl_tgt: np.ndarray,
+                       *, min_overlap: int = 100) -> float:
+    """Cosine between two CONTROL profiles, on log1p CPM, over the genes both measure.
+
+    This is the quantity [[scbasecount-context-matching]] wanted and the thing `reports/05`
+    said was impossible ("no line-specific priors are possible -- we cannot even look one
+    up"). It turns out not to need scBaseCount at all for the pooling case: we hold 18,400
+    control cells for each 2026 context and a control arm inside every pseudobulk source, so
+    the similarity between a target context and a source line is directly measurable from
+    data already on disk. scBaseCount answers the different question of WHAT a context is.
+
+    log1p first, because a raw-CPM cosine is dominated by the few thousand-CPM genes and
+    would rank sources by how ribosomal their libraries are rather than by cell identity.
+
+    Restricted to genes both profiles actually measure -- our pseudobulk sources are
+    gene-truncated to 8-10k while a challenge context carries all 18,533, so the union
+    would score a source down for genes it never had the chance to report. `min_overlap`
+    refuses rather than returning a small number: an empty overlap means an axis mismatch,
+    and silently weighting that source to zero is the kind of quiet wrongness that looks
+    like a modelling result.
+    """
+    both = np.isfinite(ctrl_src) & np.isfinite(ctrl_tgt)
+    # You cannot demand 100 shared genes from a profile that only has 3. The guard is aimed at
+    # an axis MISMATCH -- where the overlap collapses toward zero -- so it scales down to the
+    # smaller of the two profiles rather than refusing every small one on principle.
+    need = max(1, min(min_overlap,
+                      int(np.isfinite(ctrl_src).sum()), int(np.isfinite(ctrl_tgt).sum())))
+    if int(both.sum()) < need:
+        raise ValueError(
+            f"control profiles share only {int(both.sum())} finite genes (need {need}). "
+            "That is an axis mismatch, not a dissimilar cell line -- check the source's gene "
+            "space before weighting anything by this."
+        )
+    a = np.log1p(np.maximum(ctrl_src[both], 0.0))
+    b = np.log1p(np.maximum(ctrl_tgt[both], 0.0))
+    na, nb = np.linalg.norm(a), np.linalg.norm(b)
+    if na == 0 or nb == 0:
+        raise ValueError("a control profile is all zeros over the shared genes")
+    return float(np.dot(a, b) / (na * nb))
+
+
+def pooled_delta(target: str, sources: list, axis: np.ndarray,
+                 *, shrinkage: bool = True, var_floor: str = "none",
+                 gamma: float = 1.0, ctrl_tgt_cpm: np.ndarray | None = None,
+                 coverage_tiers: tuple[tuple[float, float], ...] | None = None,
+                 similarity_beta: float = 0.0, log_bias_correct: bool = False,
+                 stats: dict | None = None, shrink_k: float = 1.0,
+                 shrink_stage: str = "source",
+                 shrink_rule: str = "garrote",
+                 variance_model: VarianceModel | None = None,
+                 rule_variance: str = "model") -> np.ndarray | None:
+    """Inverse-variance pool of the sources that perturbed `target`; None if none did.
+
+    `variance_model` (T98; `sidechain.submit.variance_model`) swaps the per-cell variance behind
+    each pseudobulk source's weight for a model of it -- the dispersion curve, the gene's own
+    dispersion, a per-stratum multiplier, or a shuffled control of any of them -- and
+    `rule_variance` says which variance a shrinkage rule then reads: the swapped one (`model`)
+    or the shipped one (`shipped`), with a second `1 / sum(w)` accumulated from the shipped
+    variances for the pooled stage. A source with no cells (an `LfcTable`) keeps its own
+    variance and is counted. None and `shipped` are bit-identical to every historical call.
+
+    A source may be a `(PseudobulkSums, control_label)` tuple -- counts we
+    accumulated, variance from the per-cell CPM spread -- or an `LfcTable`,
+    which publishes the contrast already taken and derives its variance from an
+    adjusted p-value. Both answer `effect(target)` with `(fc, var)` on their own
+    gene axis, and everything below is indifferent to which it got.
+
+    `shrinkage` is the global switch; a source carrying its own `shrink`
+    attribute (the tuple triple, or any source object that sets one) overrides
+    it for that source alone. That is the depth-aware form: shrink the deep
+    essential-scale arms whose sub-noise effects really are noise, leave the
+    genome-wide arms -- where those same-size effects are the measured
+    direction -- untouched.
+
+    `shrink_k`, `shrink_stage` and `shrink_rule` say WHICH rule and WHERE, and
+    act only while shrinkage is on. `shrink_k` is the garrote's threshold (see
+    `shrink`; 1 is the historical rule). `shrink_stage="source"` shrinks each
+    source's fold change before it is pooled, the historical order.
+    `shrink_stage="pooled"` pools the raw fold changes first and applies the rule
+    once to the pooled vector, with the pooled sampling variance `1 / sum(w)`:
+    two sources that each see a gene at 0.9 standard errors are both zeroed per
+    source, and together are a gene at 1.3. That variance is the variance of the
+    pooled mean only while the weights are plain inverse variances, so the stage
+    refuses gamma != 1, coverage tiers, a similarity weight, a transfer floor and
+    a per-source override rather than divide by something else; and it is the
+    variance of the pooled mean only where the sources agree on the true effect,
+    so where cell lines truly differ it is too small and the rule softer than
+    its `k` reads. `shrink_rule="adaptive"` replaces the garrote with the
+    posterior mean of `sidechain.models.adaptive_shrink`, after pooling only.
+    The defaults are bit-identical to every historical call.
+
+    A source may also ABSTAIN per gene by returning `var = inf` there, which
+    makes its weight exactly 0. Feng does this on the 98.9 % of rows whose
+    p-value has saturated: it has a fold change but no evidence about it, and at
+    a median of 25 cells per target "no detectable change" would otherwise drag
+    real effects from better-powered sources toward zero. Note `any_src` is set
+    on the source COVERING the target, not on it having a usable weight -- a
+    target only Feng covers, and only saturated rows at that, returns a
+    genuine all-zero delta rather than None, and does not silently fall through
+    to the mean-shift fallback.
+
+    `var_floor="poisson"` applies the sampling floor inside each pseudobulk
+    source's variance (see `_log2fc_with_var`) and drops the weight clamp to a
+    pure numerical guard -- with the floor on, no finite variance can be small
+    for a pathological reason, so the clamp no longer has statistical work to do.
+    `stats`, if given, accumulates the diagnostics across calls: how many gene
+    weights sit at or below the historical 1e-6 clamp (the accidental-certainty
+    arm this floor exists to remove), how many (target, source) arms fully
+    abstained, and how many covered targets ended with zero total weight.
+
+    `gamma` is the transfer exponent (see `gamma_transfer`): each source's fold
+    change is re-expressed against the ratio of the TARGET context's control CPM
+    (`ctrl_tgt_cpm`, on `axis` -- required when gamma != 1) to that source's own
+    control CPM, per source BEFORE pooling, because the absolute change that
+    transfers at gamma = 0 is a per-source quantity. It runs after shrinkage
+    (transform the best estimate, not the raw one) and does NOT touch the
+    pooling weights -- the weight estimator belongs to the variance floor and a
+    gamma term must not quietly reweight the pool. A source that publishes no
+    control profile (an LfcTable ships only the contrast) has no ctrl_src, so
+    gamma != 1 refuses it rather than guessing. gamma = 1 skips all of this and
+    is bit-identical to the historical call.
+
+    `coverage_tiers` multiplies each source's per-gene weight by how much evidence
+    stands behind that gene in that arm (`PseudobulkSums.n_eff`). The variance the
+    weight comes from knows how many cells the ARM has; it does not know that a gene
+    whose counts add up to 100 might be one cell at 100 rather than 100 cells at 1.
+    Every factor is strictly positive, so no gene is ever silenced -- thin evidence is
+    outvoted where better evidence exists and still used where none does. A source
+    with no cells behind it (an LfcTable) is left at full weight. None is the default
+    and is bit-identical to the historical call.
+
+    A source may also carry a `transfer_floor` (tau^2), attached by
+    `apply_transfer_floors` and read here: a measured constant ADDED to that source's
+    variance before it becomes a weight. The floor and the tiers are one variance model
+    with two terms, and they are deliberately different shapes -- `var / f(n_eff) +
+    tau^2`. The tier is multiplicative because sampling variance really does fall as
+    1/n; tau^2 is additive because transfer error does not shrink with cell count (no
+    number of HCT116 cells makes HCT116 into K562), so it acts as a CEILING on weight
+    (1/tau^2) rather than a rescale. Measured against a held-out fold's truth, never
+    tuned -- fitting is the only move available on the challenge contexts, where nothing
+    can be scored. tau^2 = 0 is the default and the identity.
+    """
+    if var_floor not in ("none", "poisson"):
+        raise ValueError(f"unknown var_floor {var_floor!r}: expected 'none' or 'poisson'")
+    if gamma != 1.0 and ctrl_tgt_cpm is None:
+        raise ValueError("gamma != 1 needs ctrl_tgt_cpm: the target context's control CPM "
+                         "on the submission axis is the r in gamma_transfer")
+    if similarity_beta != 0.0 and ctrl_tgt_cpm is None:
+        raise ValueError("similarity_beta != 0 needs ctrl_tgt_cpm: the weighting is a cosine "
+                         "between the TARGET context's control profile and each source's own")
+    check_shrink_rule(shrink_k, shrink_stage, shrink_rule)
+    after = shrinkage and shrink_stage == "pooled"
+    if after and (gamma != 1.0 or coverage_tiers is not None or similarity_beta != 0.0):
+        raise ValueError("shrink_stage='pooled' divides by the pooled sampling variance "
+                         "1/sum(w); gamma != 1, coverage tiers and a similarity weight each "
+                         "make sum(w) something else -- run the stage without them")
+    if rule_variance not in RULE_VARIANCES:
+        raise ValueError(f"unknown rule_variance {rule_variance!r}: expected one of {RULE_VARIANCES}")
+    vm = None if variance_model is None or variance_model.is_shipped else variance_model
+    if vm is None and rule_variance != "model":
+        raise ValueError("rule_variance='shipped' without a variance model: there is no swapped "
+                         "variance for the rule to leave")
+    if vm is not None and var_floor != "poisson":
+        raise ValueError(f"variance_model {vm.spec()!r} needs var_floor='poisson' (see variance_model)")
+    # a second denominator from the shipped variances, for a rule held on them while the weights move
+    split_rule = vm is not None and rule_variance == "shipped"
+    clamp = 1e-6 if var_floor == "none" else 1e-12
+    num = np.zeros(len(axis)); den = np.zeros(len(axis)); any_src = False
+    den_rule = np.zeros(len(axis)) if split_rule else None
+    for src in (as_delta_source(s, var_floor=var_floor,
+                                log_bias_correct=log_bias_correct, variance_model=vm) for s in sources):
+        if vm is not None and hasattr(src, "effect_pair"):
+            got = src.effect_pair(target, stats=stats)
+            if got is None:
+                continue
+            fc, var, var_shipped = got
+            if stats is not None and src._variance() is None:
+                # a pseudobulk source the model does not reach (a multiplier naming other sources)
+                stats["variance_model_sources_unmodelled"] = (
+                    stats.get("variance_model_sources_unmodelled", 0) + 1)
+        else:
+            got = src.effect(target)
+            if got is None:
+                continue
+            fc, var = got
+            var_shipped = var
+            if vm is not None and stats is not None:
+                # an LfcTable has no cells to model: its p-value variance stands, and is counted
+                stats["variance_model_sources_unmodelled"] = (
+                    stats.get("variance_model_sources_unmodelled", 0) + 1)
+        any_src = True
+        var_rule = var_shipped if rule_variance == "shipped" else var
+        want = getattr(src, "shrink", None)
+        if shrink_stage == "pooled" and want is not None:
+            # whatever the global flag says: an override here would run the rule per source
+            # under a record that says it ran after pooling
+            raise ValueError("a per-source shrinkage override (--shrink-source) has no "
+                             "meaning when the rule runs after pooling")
+        if after:
+            if float(getattr(src, "transfer_floor", 0.0) or 0.0):
+                raise ValueError("shrink_stage='pooled' with a transfer floor: tau^2 is not "
+                                 "sampling variance, so 1/sum(w) would not be the pooled one")
+        else:
+            if want is None:
+                want = shrinkage
+            if want:
+                fc = shrink(fc, var_rule, shrink_k)
+        if gamma != 1.0:
+            get_ctrl = getattr(src, "control_cpm", None)
+            if get_ctrl is None:
+                raise ValueError(f"{type(src).__name__} publishes no control profile, so the "
+                                 "transfer exponent is undefined for it -- pool it at gamma=1 "
+                                 "or drop it from a gamma arm")
+            tgt_on_src = remap_to_axis(ctrl_tgt_cpm, axis, src.genes, fill=np.nan)
+            fc = gamma_transfer(fc, get_ctrl(), tgt_on_src, gamma, stats=stats)
+        # `1/inf` is 0, which is the abstention. The `maximum` floor only guards
+        # the other end -- a variance so small it would swamp every other
+        # source -- and must not be applied to inf, hence the divide as written.
+        with np.errstate(divide="ignore"):
+            w = 1.0 / np.maximum(var, clamp)
+        w = np.where(np.isfinite(var), w, 0.0)
+        fc = np.where(np.isfinite(fc), fc, 0.0)
+        if similarity_beta != 0.0:
+            # A per-SOURCE scalar on the weight, in the same place `coverage_tiers` puts its
+            # per-gene one. It says how much this source's cell line looks like the context we
+            # are predicting, so a haematopoietic context stops being told about itself by an
+            # embryonic stem line at the same volume as by another leukaemia line.
+            #
+            # beta is the sharpness and beta = 0 is exactly uniform (x**0 == 1), so the default
+            # is bit-identical to every historical call -- the same endpoint property the
+            # emission dial has. Cosines here run ~0.9-0.99, so beta has to be large to
+            # separate them; that is a property of the measure, not a bug, and it is why this
+            # is an exponent rather than a multiplier.
+            get_ctrl = getattr(src, "control_cpm", None)
+            if get_ctrl is None:
+                # An LfcTable publishes only the contrast, so it has no control profile and
+                # no similarity. Left at full weight and counted, never silently dropped.
+                if stats is not None:
+                    stats["similarity_sources_unweighted"] = (
+                        stats.get("similarity_sources_unweighted", 0) + 1)
+            else:
+                tgt_on_src = remap_to_axis(ctrl_tgt_cpm, axis, src.genes, fill=np.nan)
+                sim = control_similarity(get_ctrl(), tgt_on_src)
+                w = w * (sim ** similarity_beta)
+                if stats is not None:
+                    stats.setdefault("similarity", {})[type(src).__name__ + ":" + str(
+                        getattr(src, "name", len(stats.get("similarity", {}))))] = round(sim, 6)
+        if coverage_tiers is not None:
+            get_neff = getattr(src, "n_eff", None)
+            ne = get_neff(target) if get_neff is not None else None
+            if ne is not None:
+                cf = coverage_factor(ne, coverage_tiers)
+                w = w * cf
+                if stats is not None:
+                    stats["coverage_gene_arms"] = (
+                        stats.get("coverage_gene_arms", 0) + int(cf.size))
+                    stats["coverage_gene_arms_demoted"] = (
+                        stats.get("coverage_gene_arms_demoted", 0) + int((cf < 1.0).sum()))
+            elif stats is not None:
+                # A source with no cells behind it (LfcTable) keeps full weight. Counted
+                # so a run cannot quietly be half-tiered without saying so.
+                stats["coverage_sources_unweighted"] = (
+                    stats.get("coverage_sources_unweighted", 0) + 1)
+        tau2 = float(getattr(src, "transfer_floor", 0.0) or 0.0)
+        if tau2:
+            # The transfer-error floor: this source's variance gets tau^2 ADDED before it
+            # becomes a weight, so no source can claim more certainty than its measured error
+            # against a held-out line supports. Written as a transform of the weight rather
+            # than of the variance so that it composes with the terms above rather than
+            # replacing them: with w = 1/v, w / (1 + tau2*w) is exactly 1/(v + tau2), and the
+            # coverage tier has already divided v by its factor -- which is the intended
+            # order. The tier scales the SAMPLING variance (that really does fall as 1/n);
+            # tau^2 is added after, because transfer error does not shrink with cell count.
+            #
+            # Additive, not multiplicative, and the difference is the whole point: this caps
+            # every weight at 1/tau^2 (w -> 1/tau2 as w -> inf) instead of rescaling the
+            # column, so it bites exactly on the genes a source claims to know perfectly and
+            # barely touches the ones it already admits are noisy.
+            #
+            # tau2 = 0 is the identity on every branch, including w = 0 (abstention), so the
+            # default path is bit-identical to every historical call.
+            w = w / (1.0 + tau2 * w)
+            if stats is not None:
+                stats["transfer_floor_sources"] = stats.get("transfer_floor_sources", 0) + 1
+        if stats is not None:
+            finite = np.isfinite(var)
+            stats["gene_weights"] = stats.get("gene_weights", 0) + int(finite.sum())
+            stats["gene_weights_var_le_1e-6"] = (
+                stats.get("gene_weights_var_le_1e-6", 0) + int((finite & (var <= 1e-6)).sum()))
+            if not finite.any():
+                stats["source_arms_abstained"] = stats.get("source_arms_abstained", 0) + 1
+        num += remap_to_axis(fc * w, src.genes, axis, fill=0.0)
+        den += remap_to_axis(w, src.genes, axis, fill=0.0)
+        if den_rule is not None:
+            # the shipped variances' own 1/sum(w), with the same abstention pattern: a model
+            # variance is finite exactly where the shipped one is
+            with np.errstate(divide="ignore"):
+                w_rule = 1.0 / np.maximum(var_rule, clamp)
+            w_rule = np.where(np.isfinite(var_rule), w_rule, 0.0)
+            den_rule += remap_to_axis(w_rule, src.genes, axis, fill=0.0)
+    if not any_src:
+        return None
+    out = np.zeros(len(axis))
+    nz = den > 0
+    if stats is not None and not nz.any():
+        stats["targets_zero_weight"] = stats.get("targets_zero_weight", 0) + 1
+    out[nz] = num[nz] / den[nz]
+    if after:
+        # one rule on the pooled vector, with the variance of an inverse-variance mean
+        if den_rule is not None:
+            with np.errstate(divide="ignore"):
+                pooled_var = np.where(den_rule[nz] > 0, 1.0 / np.maximum(den_rule[nz], 1e-300), np.inf)
+        else:
+            pooled_var = 1.0 / den[nz]
+        out[nz] = (adaptive_shrink(out[nz], pooled_var, stats=stats) if shrink_rule == "adaptive"
+                   else shrink(out[nz], pooled_var, shrink_k))
+    return out
+
+
+def variance_kwargs(args) -> dict:
+    """The parsed variance flags as `pooled_delta`'s keyword arguments (T98)."""
+    vm = getattr(args, "_variance_model", None)
+    if vm is None:
+        vm = VarianceModel.parse(getattr(args, "variance_model", "shipped"))
+    return {"variance_model": vm, "rule_variance": getattr(args, "rule_variance", "model")}
+
+
+def add_shrink_args(ap: argparse.ArgumentParser, *, twin: str) -> None:
+    """The three shrinkage-rule flags (T84), shared by `submit.build` and `eval.loco`."""
+    ap.add_argument("--shrink-k", type=float, default=1.0, metavar="K",
+                    help="the garrote's threshold: a transferred log2FC within sqrt(K) standard "
+                         "errors of zero is set to zero, a larger one keeps 1 - K*var/fc^2 of "
+                         "itself (default 1, the historical rule; 8 zeroes below 2.83 standard "
+                         f"errors). Same knob in {twin}.")
+    ap.add_argument("--shrink-stage", choices=SHRINK_STAGES, default="source",
+                    help="where the rule runs: on each source's fold change before pooling "
+                         "(source, the historical order), or once on the pooled vector with the "
+                         "pooled sampling variance (pooled). The pooled stage is refused with "
+                         "--shrink-source, --gamma != 1, --coverage-tiers, a similarity weight "
+                         "or a transfer floor.")
+    ap.add_argument("--shrink-rule", choices=SHRINK_RULES, default="garrote",
+                    help="garrote (the default) or adaptive: the posterior mean under a mixture "
+                         "prior fitted across each target's genes (sidechain.models."
+                         "adaptive_shrink), which shrinks a weak gene without zeroing it. "
+                         "adaptive needs --shrink-stage pooled and takes no --shrink-k.")
+
+
+def check_shrink_args(ap: argparse.ArgumentParser, args) -> None:
+    """Refuse an inert or undefined shrinkage setting before any work; both entry points."""
+    moved = [flag for flag, on in (("--shrink-k", args.shrink_k != 1.0),
+                                   ("--shrink-stage", args.shrink_stage != "source"),
+                                   ("--shrink-rule", args.shrink_rule != "garrote")) if on]
+    if args.no_shrink and args.shrink_source:
+        # the depth-aware arm: the rule runs on the named sources only, at --shrink-k
+        moved = [flag for flag in moved if flag != "--shrink-k"]
+    if moved and args.no_shrink:
+        ap.error(f"{', '.join(moved)} with --no-shrink: the rule is switched off, so the "
+                 "setting would do nothing and the arm would be named for a rule it never ran")
+    try:
+        check_shrink_rule(args.shrink_k, args.shrink_stage, args.shrink_rule)
+    except ValueError as err:
+        ap.error(str(err))
+    if args.shrink_stage == "pooled":
+        clash = [flag for flag, on in (
+            ("--shrink-source", bool(args.shrink_source)),
+            ("--gamma", getattr(args, "gamma", 1.0) != 1.0),
+            ("--coverage-tiers", getattr(args, "coverage_tiers", None) is not None),
+            ("--similarity-beta", getattr(args, "similarity_beta", 0.0) != 0.0),
+            ("--transfer-floor", bool(getattr(args, "transfer_floor", None)))) if on]
+        if clash:
+            ap.error(f"--shrink-stage pooled with {', '.join(clash)}: the pooled rule divides by "
+                     "the pooled sampling variance, which each of these changes")
+
+
+def shrink_kwargs(args) -> dict:
+    """The parsed shrinkage flags as `pooled_delta`'s keyword arguments."""
+    return {"shrinkage": not args.no_shrink, "shrink_k": args.shrink_k,
+            "shrink_stage": args.shrink_stage, "shrink_rule": args.shrink_rule}
+
+
+def write_shrink_record(path: Path, args, target_stats: dict, pool_fit_stats: dict | None) -> dict:
+    """The sidecar a build under a moved shrinkage rule leaves beside the .vcc (`<stem>.shrink.json`).
+
+    Which rule ran, and -- for the adaptive rule -- the fit's stopping constants and how its fits
+    ended, for the targets and for the neighbour pool apart: the constants are part of the model,
+    and the at-cap counts say how much of the build rests on fits stopped at the cap (a lower bound
+    on unfinished ones). The thread settings and the BLAS numpy links against are recorded too,
+    because the adaptive fit is reproducible to about 1e-4 across machines, not bit for bit.
+    """
+    import os
+
+    rec = {"shrink_k": args.shrink_k, "shrink_stage": args.shrink_stage, "shrink_rule": args.shrink_rule}
+    if args.shrink_rule == "adaptive":
+        pick = lambda st: {k: v for k, v in (st or {}).items() if k.startswith("adaptive_")}
+        try:
+            blas = np.show_config(mode="dicts").get("Build Dependencies", {}).get("blas", {}).get("name")
+        except Exception:          # older numpy: no dict form
+            blas = None
+        rec["adaptive_fit"] = {"max_cycles": adaptive_shrink_module.MAX_CYCLES,
+                               "tol_per_gene": adaptive_shrink_module.TOL_PER_GENE,
+                               "calm_cycles": adaptive_shrink_module.CALM_CYCLES,
+                               "min_genes": adaptive_shrink_module.MIN_GENES,
+                               "max_components": adaptive_shrink_module.MAX_COMPONENTS}
+        rec["fits_targets"] = pick(target_stats)
+        rec["fits_neighbour_pool"] = pick(pool_fit_stats) if pool_fit_stats is not None else None
+        rec["numerics"] = {"numpy": np.__version__, "blas": blas,
+                           **{k: os.environ.get(k) for k in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS",
+                                                              "MKL_NUM_THREADS")}}
+    path.write_text(json.dumps(rec, indent=1) + "\n")
+    if args.shrink_rule == "adaptive":
+        t, q = rec["fits_targets"], rec["fits_neighbour_pool"] or {}
+        print(f"adaptive shrinkage: targets {t.get('adaptive_fits', 0)} fits ({t.get('adaptive_fits_at_cap', 0)} at "
+              f"the cap, {t.get('adaptive_too_few_genes', 0)} too thin to fit); neighbour pool "
+              f"{q.get('adaptive_fits', 0)} fits ({q.get('adaptive_fits_at_cap', 0)} at the cap, "
+              f"{q.get('adaptive_too_few_genes', 0)} too thin)", flush=True)
+    return rec
+
+
+def add_neighbour_args(ap: argparse.ArgumentParser, *, twin: str) -> None:
+    """The five neighbour-arm flags (T103), shared by `submit.build` and `eval.loco`."""
+    ap.add_argument("--neighbour-table", type=Path, action="append", default=None, metavar="PT",
+                    help="symbol-keyed gene table (.pt, {symbol: vector}) whose cosine "
+                         "neighbourhoods pick each target's neighbours, e.g. Tahoe-x1 3B's "
+                         "gene-encoder table (sidechain.models.neighbour_arm). Repeatable, one "
+                         "--neighbour-w per table in the same order: two tables blend both "
+                         "neighbour sets into SER (NeighbourMix). Needs --neighbour-pool. Same "
+                         f"knob in {twin}.")
+    ap.add_argument("--neighbour-pool", type=Path, default=None, metavar="CSV",
+                    help="the targets neighbours are drawn from (column target_gene, else the "
+                         "first). Declared, never inferred from what the sources cover, so a box "
+                         "build on the full X-Atlas files and a Mac build on label subsets are "
+                         "one model. Members no source covers or the table lacks are dropped and "
+                         "counted.")
+    ap.add_argument("--neighbour-k", type=int, default=25, metavar="K",
+                    help="neighbours per target (default 25, the geometry gate's header k)")
+    ap.add_argument("--neighbour-w", type=float, action="append", default=None, metavar="W",
+                    help="weight of the neighbour arm against SER's unit residual: "
+                         "out = m + |r| unit(unit(r) + w unit(n)), the geometry gate's cross-mode "
+                         "fusion term for term under --neighbour-size unit (the default). Under "
+                         "'median' w multiplies n/s, whose length is about 0.2 on a real "
+                         "neighbourhood at the default k, so a w read off the gate's unit sweep "
+                         "does not carry over and has to be re-swept (the arm's own record "
+                         "reports the distribution). Repeatable, one per --neighbour-table. "
+                         "Unset = off and bit-identical (nothing is loaded).")
+    # the two spellings of models.neighbour_arm.SIZES, named here so that off still never
+    # imports that module (tests/test_neighbour_arm.py pins the two lists equal)
+    ap.add_argument("--neighbour-size", choices=("unit", "median"), default="unit",
+                    help="how long the neighbour arm is in the blend: 'unit' (default) is the "
+                         "gate's blend, every target's arm the same length; 'median' is "
+                         "out = m + |r| unit(unit(r) + w n/s) with n the plain mean of the k "
+                         "neighbours' residuals and s the median residual length over the pool, "
+                         "so a neighbourhood that responds strongly and agrees pulls harder than "
+                         "one that cancels. Needs --neighbour-w.")
+    # the spellings of models.neighbour_arm.SELECTS, named here for the same reason as the sizes
+    ap.add_argument("--neighbour-select", choices=("table", "hybrid", "response", "euclid",
+                                                      "constant"),
+                    default="table",
+                    help="which k pool members are averaged: 'table' (default) is the gate's "
+                         "pick, the k nearest in the gene table; 'hybrid' takes the table's "
+                         "--neighbour-cand nearest and keeps the k whose residual responses in "
+                         "the sources point most like the target's own (cosine); 'response' "
+                         "ranks the whole pool by that cosine; 'euclid' by the Euclidean "
+                         "distance between residuals; 'constant' is the control and averages "
+                         "nobody, every target's arm being minus the pool mean (k is unused). "
+                         "Every rule reads the sources only. One "
+                         "table only. Needs --neighbour-w.")
+    ap.add_argument("--neighbour-cand", type=int, default=100, metavar="N",
+                    help="--neighbour-select hybrid: how many of the table's nearest are "
+                         "re-ranked by response (default 100)")
+    ap.add_argument("--neighbour-picks", type=Path, default=None, metavar="JSON",
+                    help="a declared pick: {target: {\"members\": [pool labels], \"weights\": "
+                         "[...] or null}}, built from the same sources as the pool. Each target "
+                         "is averaged over exactly those members (weighted when weights are "
+                         "given), and the file must name EVERY target the build fuses: the pick "
+                         "comes from a rule the arm cannot compute, so a target it leaves out "
+                         "has no rule at all and the build refuses it by name. One table only, "
+                         "--neighbour-select table only. Needs --neighbour-w.")
+
+
+def check_neighbour_args(ap: argparse.ArgumentParser, args) -> None:
+    """Refuse a half-set neighbour arm before any work, in both entry points."""
+    ws, tables, pool = args.neighbour_w or [], args.neighbour_table or [], args.neighbour_pool
+    size = getattr(args, "neighbour_size", "unit")
+    select = getattr(args, "neighbour_select", "table")
+    cand = int(getattr(args, "neighbour_cand", 100))
+    picks = getattr(args, "neighbour_picks", None)
+    for w in ws:
+        if not math.isfinite(w) or w <= 0:
+            ap.error(f"--neighbour-w must be finite and > 0, got {w}: a negative weight steers "
+                     "AWAY from the neighbours, which no gate measured, inf or nan fuse every "
+                     "target into NaN, and 0 is the knob off -- leave the flag out")
+    if not ws:
+        half = [f for f, on in (("--neighbour-table", bool(tables)),
+                                ("--neighbour-pool", pool is not None),
+                                ("--neighbour-size median", size == "median"),
+                                (f"--neighbour-select {select}", select != "table"),
+                                (f"--neighbour-cand {cand}", cand != 100),
+                                ("--neighbour-picks", picks is not None)) if on]
+        if half:
+            # ", " not "/": "--neighbour-table/--neighbour-size median" reads as one flag taking
+            # the value median. The verb and the pronoun follow the count.
+            one = len(half) == 1
+            ap.error(f"{', '.join(half)} without --neighbour-w "
+                     f"{'does' if one else 'do'} nothing; give a weight or "
+                     f"drop {'it' if one else 'them'}")
+        return
+    if not tables or pool is None:
+        ap.error("--neighbour-w needs both --neighbour-table and --neighbour-pool")
+    if len(tables) != len(ws):
+        ap.error(f"one --neighbour-w per --neighbour-table, in the same order: got "
+                 f"{len(tables)} tables and {len(ws)} weights")
+    for flag, path in ([("--neighbour-table", t) for t in tables] + [("--neighbour-pool", pool)]
+                       + ([("--neighbour-picks", picks)] if picks is not None else [])):
+        if not Path(path).expanduser().exists():
+            ap.error(f"{flag}: no such file {path}")
+    if args.neighbour_k < 1:
+        ap.error(f"--neighbour-k must be >= 1, got {args.neighbour_k}")
+    if len(tables) > 1 and (select != "table" or picks is not None):
+        ap.error("--neighbour-select other than table and --neighbour-picks are wired for one "
+                 f"--neighbour-table, not for a mix of {len(tables)}: it is not defined which "
+                 "table's neighbours they would replace")
+    if picks is not None and select != "table":
+        ap.error(f"--neighbour-picks names every target the build fuses, so there is nothing "
+                 f"left for --neighbour-select {select} to rank: pass one or the other")
+    if select == "hybrid" and cand < args.neighbour_k:
+        ap.error(f"--neighbour-select hybrid keeps k of the table's --neighbour-cand nearest, so "
+                 f"cand must be >= k: got cand = {cand}, k = {args.neighbour_k}")
+    # Read the two declared inputs here, not after the pooling: a pool of 849 targets costs
+    # minutes to pool, and a launch that cannot work should die in the first second.
+    if picks is not None:
+        parsed = None
+        try:
+            parsed = json.loads(Path(picks).expanduser().read_text())
+        except (OSError, ValueError) as exc:
+            ap.error(f"--neighbour-picks: {picks} could not be read as JSON ({exc})")
+        if not isinstance(parsed, dict):
+            ap.error(f"--neighbour-picks: {picks} must be a mapping of target -> "
+                     f'{{"members": [...], "weights": [...] or null}}, got a '
+                     f"{type(parsed).__name__}")
+        for target, entry in parsed.items():
+            if not isinstance(entry, dict):
+                ap.error(f"--neighbour-picks: {picks} entry {target!r} must be a mapping "
+                         f'carrying "members", got a {type(entry).__name__}')
+            if "members" not in entry:
+                ap.error(f"--neighbour-picks: {picks} entry {target!r} is a mapping without "
+                         f'"members" (it carries {sorted(entry)})')
+    if select == "hybrid":
+        from sidechain.models.neighbour_arm import read_pool
+
+        # the pool the arm builds can only be SMALLER than its file (members the table lacks or
+        # no source covers are dropped), so a cand the file cannot reach never can
+        n_declared = len(read_pool(pool))
+        if cand >= n_declared:
+            ap.error(f"--neighbour-select hybrid re-ranks the table's cand nearest OTHER members, "
+                     f"so cand must be < the pool's size: got cand = {cand} and "
+                     f"{n_declared} labels in {pool} (the pool as built can only be smaller)")
+    if args.gamma != 1.0:
+        ap.error("--neighbour-w with --gamma != 1 is not wired: gamma makes the shifts "
+                 "context-specific, and the pool's residuals would have to be re-pooled per "
+                 "context")
+
+
+def neighbour_arm_for(args, delta_of, axis: np.ndarray):
+    """Build the arm from parsed flags; returns ``(arm, record)`` for the run's sidecar."""
+    import hashlib
+
+    from sidechain.models.neighbour_arm import build_neighbour_arms, load_gene_table, read_pool
+
+    def sha256(path: Path) -> str:
+        h = hashlib.sha256()
+        with open(path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1 << 24), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    def as_list(x):
+        return list(x) if isinstance(x, (list, tuple)) else [x]
+
+    table_paths = [Path(t).expanduser() for t in as_list(args.neighbour_table)]
+    ws = [float(w) for w in as_list(args.neighbour_w)]
+    pool_path = Path(args.neighbour_pool).expanduser()
+    # getattr: eval.loco's SimpleNamespace and older callers predate the size flag
+    size = getattr(args, "neighbour_size", "unit")
+    select = getattr(args, "neighbour_select", "table")
+    cand = int(getattr(args, "neighbour_cand", 100))
+    picks_path = getattr(args, "neighbour_picks", None)
+    picks = None
+    if picks_path is not None:
+        picks_path = Path(picks_path).expanduser()
+        picks = json.loads(picks_path.read_text())
+    arm = build_neighbour_arms(read_pool(pool_path), delta_of, axis,
+                               [load_gene_table(t) for t in table_paths],
+                               k=args.neighbour_k, ws=ws, size=size, select=select, cand=cand,
+                               picks=picks)
+    # One table records the scalar shape the first two bundles were built with; a mix, lists.
+    one = len(table_paths) == 1
+    record = {"table": str(table_paths[0]) if one else [str(t) for t in table_paths],
+              "table_sha256": (sha256(table_paths[0]) if one
+                               else [sha256(t) for t in table_paths]),
+              # the flag as parsed; every consumer merges arm.summary() over this record, and the
+              # arm re-states its own size there, so the arm's actual blend always wins and a
+              # record whose size disagrees with the arm that ran cannot be written
+              "size": size,
+              "pool_file": str(pool_path), "pool_sha256": sha256(pool_path)}
+    if picks_path is not None:       # a declared pick is an input like the pool: path and hash
+        record.update({"picks_file": str(picks_path), "picks_sha256": sha256(picks_path)})
+    return arm, record
+
+
+def fuse_neighbours(args, shifts: dict, covered: list[str], sources: list, axis: np.ndarray,
+                    cov_tiers, record_path: Path, fit_stats: dict | None = None) -> dict:
+    """Replace each covered target's pooled delta with its neighbour-fused one, in place.
+
+    The pool is pooled exactly as the targets were (same sources, shrinkage, floor, tiers);
+    a pool member that is also a predicted target reuses its delta rather than re-pooling it.
+    A target no source covers keeps the generic fallback shift unfused: the port fuses SER's
+    residual, and a fallback target has none (final-phase: knobs) -- on a panel where the
+    fallback count is not zero, a neighbour-only prediction for those targets is the build
+    this arm makes possible, and it is not written yet.
+    """
+    t0 = time.time()
+    done = set(covered)
+
+    def delta_of(label):
+        if label in done:
+            return shifts[label]
+        return pooled_delta(label, sources, axis, **shrink_kwargs(args), **variance_kwargs(args),
+                            log_bias_correct=args.log_bias_correct, var_floor=args.var_floor,
+                            coverage_tiers=cov_tiers, stats=fit_stats)
+
+    arm, record = neighbour_arm_for(args, delta_of, axis)
+    for p in covered:
+        shifts[p] = arm.fuse(p, shifts[p])
+    record.update(arm.summary())
+    record["targets_unfused_fallback"] = len(shifts) - len(covered)
+    record_path.write_text(json.dumps(record, indent=1) + "\n")
+    print(f"neighbour arm: {record.get('targets_fused', 0)} of {len(covered)} targets fused "
+          f"(k={record['k']}, w={record['w']}, pool {record['pool_used']} of "
+          f"{record['pool_requested']}) in {time.time() - t0:.0f}s", flush=True)
+    return record
+
+
+def scatter_pairs(tab: pd.DataFrame, axis: np.ndarray, perts: list[str], name: str) -> tuple[dict, dict]:
+    """The pairs of one per-(perturbation, gene) scatter table that change something, and its counts.
+
+    `tab` carries `target`, `feature` and `scatter` >= 0 for `PoissonEmitter.emit_dual(scatter=)` (T85):
+    1 leaves the gene as the emitter emits it, 0 removes its sampling scatter, above 1 widens it. Rows
+    whose target is not one of `perts`, whose gene is not on `axis`, or whose gene IS the target (its
+    pin is not the table's to move) are dropped and counted; a pair listed twice is refused. `name`
+    is the file's, for the refusals. Returns `{target: (gene positions, values)}` for the pairs that
+    change something (scatter other than 1) and the counts. Shared by `sidechain.eval.loco`
+    (`read_scatter_table`) and by `read_context_scatter_table` below, so a mirror arm and a build
+    read one table the same way.
+    """
+    target, feature = tab["target"].astype(str), tab["feature"].astype(str)
+    val = tab["scatter"].to_numpy(dtype=np.float64)
+    if not np.isfinite(val).all() or (val < 0).any():
+        raise SystemExit(f"--scatter-table {name}: scatter must be finite and >= 0")
+    if pd.DataFrame({"target": target, "feature": feature}).duplicated().any():
+        raise SystemExit(f"--scatter-table {name}: a (target, feature) pair is listed twice")
+    pos = {g: i for i, g in enumerate(axis)}
+    known = set(perts)
+    off_target = ~target.isin(known).to_numpy()
+    off_axis = ~feature.isin(pos).to_numpy()
+    own = (target == feature).to_numpy()
+    keep = ~(off_target | off_axis | own) & (val != 1.0)
+    out = {}
+    kept = pd.DataFrame({"target": target[keep], "feature": feature[keep], "scatter": val[keep]})
+    for t, block in kept.groupby("target", sort=False):
+        out[t] = (np.array([pos[g] for g in block["feature"]], dtype=np.int64),
+                  block["scatter"].to_numpy(dtype=np.float64))
+    sizes = [len(v[0]) for v in out.values()]
+    record = {"rows": len(tab), "pairs_applied": int(keep.sum()),
+              "targets_with_a_pair": len(out), "pairs_per_target_median": float(np.median(sizes)) if sizes else 0.0,
+              "rows_at_scatter_zero": int(((val == 0.0) & keep).sum()),
+              "rows_below_one": int(((val < 1.0) & keep).sum()),
+              "rows_above_one": int(((val > 1.0) & keep).sum()),
+              "rows_dropped": {"target_not_in_this_file": int(off_target.sum()),
+                               "gene_not_on_the_axis": int((off_axis & ~off_target).sum()),
+                               "the_targets_own_gene": int((own & ~off_target & ~off_axis).sum())}}
+    return out, record
+
+
+def read_scatter_frame(path: Path) -> pd.DataFrame:
+    """A scatter table off disk, with the checks both of its readers need before they split it: the
+    three columns are there, a context kept as the index is a column, a context column under
+    another spelling is refused (read as no context, its rows would act on every context), and
+    every value, whichever context it is for, is finite and not negative."""
+    tab = pd.read_parquet(path)
+    if "context" in tab.index.names:
+        tab = tab.reset_index()
+    odd = [c for c in tab.columns if str(c).casefold() == "context" and c != "context"]
+    if odd:
+        raise SystemExit(f"--scatter-table {path.name}: a column named {odd[0]!r} -- the context "
+                         "column is spelled 'context'")
+    missing = [c for c in ("target", "feature", "scatter") if c not in tab.columns]
+    if missing:
+        raise SystemExit(f"--scatter-table {path.name}: no column {missing}; it needs target, "
+                         "feature and scatter (and may carry context)")
+    val = pd.to_numeric(tab["scatter"], errors="coerce").to_numpy(dtype=np.float64)
+    if not np.isfinite(val).all() or (val < 0).any():
+        raise SystemExit(f"--scatter-table {path.name}: scatter must be finite and >= 0")
+    return tab
+
+
+def read_context_scatter_table(path: Path, axis: np.ndarray, perts: list[str],
+                               contexts: list[str]) -> tuple[dict, dict]:
+    """`--scatter-table` for a build: `sidechain.eval.loco`'s table, with a context.
+
+    A parquet with `target`, `feature`, `scatter` and, optionally, `context`. With a `context`
+    column a row acts on that context's block only, and a row naming a context this build does not
+    write is dropped and counted; without one every row acts on every context. Within a context
+    the rules are `scatter_pairs`'s. A table none of whose pairs applies to any context of the
+    build is refused: its targets, genes or contexts are another panel's, and the build it would
+    make is the build without it. A context none of its pairs applies to is emitted without it,
+    and said so. Returns `{context: {target: (gene positions, values)}}` and the record that goes into
+    the build's `.dual.json`.
+
+    (final-phase: knobs) A table is one panel's and one phase's: its targets and its contexts are
+    the ones it was designed on. A build of other contexts needs a table designed on their own
+    control cells; one made for another panel is refused here only when NONE of its pairs applies.
+    """
+    path = Path(path).expanduser()
+    cols = ["target", "feature", "scatter"]
+    tab = read_scatter_frame(path)
+    has_context = "context" in tab.columns
+    named = tab["context"].astype(str) if has_context else None
+    out, per_context = {}, {}
+    for ctx in contexts:
+        part = tab[named == ctx] if has_context else tab
+        out[ctx], per_context[ctx] = scatter_pairs(
+            part[cols], axis, perts, f"{path.name} (context {ctx})" if has_context else path.name)
+    if not any(out[ctx] for ctx in contexts):
+        its = f"; the table names {', '.join(sorted(set(named))[:8])}" if has_context else ""
+        raise SystemExit(f"--scatter-table {path.name}: none of its pairs applies to a context of "
+                         f"this build ({', '.join(contexts)}{its}) -- its targets, genes or "
+                         "contexts are another panel's, --limit-perts cut its targets, or every "
+                         "value is 1")
+    if has_context:
+        for ctx in contexts:
+            if not out[ctx]:
+                print(f"WARNING --scatter-table {path.name}: no pair of it applies to context "
+                      f"{ctx}; its blocks are emitted without the table", flush=True)
+    off_context = int((~named.isin(set(contexts))).sum()) if has_context else 0
+    record = {"table": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+              "rows": len(tab), "context_column": has_context,
+              "rows_naming_a_context_not_built": off_context, "contexts": per_context}
+    return out, record
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--challenge-config", default="challenges/vcc2026/config.yaml")
+    ap.add_argument("--emitter", choices=["control-null", "h1-mean-shift", "delta-transfer"], required=True)
+    ap.add_argument("--h1-cache")
+    ap.add_argument("--gwps-cache")
+    ap.add_argument("--gwps-control", default="control", metavar="LABEL",
+                    help="the control label inside --gwps-cache (default 'control', the "
+                         "panel-streamed cache's spelling). k562_gwps_union_pseudobulk.npz spells "
+                         "it 'non-targeting'; its rows for the 272 panel targets pool bit-identically "
+                         "to the panel cache's, and it carries 821 of the neighbour pool's 849 "
+                         "(T103), as eval.loco's folds do")
+    ap.add_argument("--source", action="append", default=[], metavar="NPZ:CONTROL",
+                    help="additional pseudobulk source for delta-transfer, as .npz:control_label "
+                         "(repeatable) -- the syntax sidechain.eval.loco uses, so a mirror-scored "
+                         "source list carries over verbatim")
+    ap.add_argument("--shrink-source", action="append", default=[], metavar="NPZ:CONTROL",
+                    help="like --source, but this source's transferred log2FCs are shrunk "
+                         "regardless of --no-shrink (depth-aware shrinkage: shrink the deep "
+                         "essential-scale arms, leave genome-wide arms carrying the direction "
+                         "signal unshrunk). Same syntax in sidechain.eval.loco.")
+    ap.add_argument("--lfc-source", action="append", default=[], metavar="NPZ",
+                    help="cached LfcTable .npz -- a source publishing the contrast already "
+                         "taken rather than cells (e.g. Feng 2026). Repeatable. Built by "
+                         "`python -m sidechain.data.lfc_table`.")
+    ap.add_argument("--alpha", type=float, default=1.0, help="scale applied to every transferred log2FC")
+    ap.add_argument("--alpha-bulk", type=float, default=None, metavar="ALPHA_BULK",
+                    help="a second amplitude for the pseudobulk channel (letter b, ADR 0005): the "
+                         "emitted cells' equal-weight per-cell mean follows --alpha, their "
+                         "depth-weighted column sums follow this value "
+                         "(count_emitters.PoissonEmitter.emit_dual; same knob in "
+                         "sidechain.eval.loco, so a mirror-scored arm submits verbatim). Needs a "
+                         "depth spread (--emit-lambda > 0 or --dispersion poisson) and the "
+                         "delta-transfer emitter; a perturbation whose two moments cannot both be "
+                         "met carries one amplitude and is counted. Unset = one amplitude, "
+                         "bit-identical")
+    ap.add_argument("--bulk-anchor", choices=["mean_cpm", "pooled"], default="mean_cpm",
+                    help="T84 round 2: which control profile the pseudobulk channel is built on. "
+                         "'mean_cpm' (default, bit-identical, every entry through SER-7abefn) is "
+                         "the mean of per-cell CPM; 'pooled' is sum of counts / sum of depths, "
+                         "the profile cell-eval2's control pseudobulk actually is. The per-cell "
+                         "channel stays on mean_cpm either way; without --alpha-bulk the "
+                         "pseudobulk takes --alpha. Same knob in sidechain.eval.loco, so a "
+                         "mirror-scored arm submits verbatim. Needs a depth spread and the "
+                         "delta-transfer emitter (count_emitters.PoissonEmitter.bulk_anchor)")
+    ap.add_argument("--dual-fallback", choices=["template", "anchor"], default="template",
+                    help="what a perturbation whose two moments cannot both be met falls back to. "
+                         "'template' (default, bit-identical, every entry through SER-11abefknw): "
+                         "one amplitude on the mean-per-cell-CPM profile, so under --bulk-anchor "
+                         "pooled it loses the anchor too. 'anchor': one amplitude with the summed "
+                         "profile kept on the anchor, the template only if that fails as well; "
+                         "under --bulk-anchor mean_cpm it re-pins the column sums to their "
+                         "expectation instead (count_emitters.PoissonEmitter.emit_dual). Same knob "
+                         "in sidechain.eval.loco, so a mirror-scored arm submits verbatim")
+    ap.add_argument("--emit-shape", choices=["template", "controls"], default="template",
+                    help="what every block of cells starts from (T85). 'template' (default, "
+                         "bit-identical): the emitter's own drawn cells. 'controls': real control "
+                         "cells of the context, each gene's counts re-rated to the prediction, so "
+                         "a gene with nothing predicted reads as control cells do "
+                         "(count_emitters.PoissonEmitter.emit_dual(shape=True)); a target no "
+                         "source covers keeps its generic shift and is re-rated the same way. "
+                         "Needs the two-channel emission (--alpha-bulk or --bulk-anchor pooled). "
+                         "Same knob in sidechain.eval.loco")
+    ap.add_argument("--scatter-table", type=Path, default=None, metavar="PARQUET",
+                    help="T85: a per-(context, perturbation, gene) dial on the emitted cell-to-cell "
+                         "scatter. A parquet with target, feature, scatter >= 0 and, optionally, "
+                         "context: 1 = as the gene is emitted, 0 = no sampling scatter (the gene "
+                         "keeps its per-cell mean, its column total and the depth tilt the two "
+                         "moments need), above 1 = wider. With a context column a row acts on that "
+                         "context's block only; without one, on every context. The cells drawn, "
+                         "their depths and every unlisted gene's draw are the build's without it "
+                         "(count_emitters.PoissonEmitter.emit_dual). With --emit-shape controls the "
+                         "factor acts on a gene's re-rated counts: 1 is the controls' shape, 0 the "
+                         "predicted count in every cell. Needs the two-channel emission "
+                         "(--alpha-bulk or --bulk-anchor pooled). A table without a context column "
+                         "is the one sidechain.eval.loco reads. Knob letter h (ADR 0005): a "
+                         "model-named stem must carry it with this flag, and may not without")
+    ap.add_argument("--gamma", type=float, default=1.0,
+                    help="transfer exponent on the target/source control-CPM ratio (see "
+                         "gamma_transfer; same knob in sidechain.eval.loco, so a mirror-scored "
+                         "arm submits verbatim). 1 = the fold change transfers -- today's "
+                         "emitter, bit-identical single-pass shifts. Any other value makes the "
+                         "shifts CONTEXT-SPECIFIC: they are pooled once per context inside the "
+                         "write loop, against that context's own control profile. delta-transfer "
+                         "only. The H1 mean-shift fallback is not gamma-transformed (it is an "
+                         "aggregate, not a contrast; fallback is 0 on the current pool).")
+    ap.add_argument("--no-shrink", action="store_true", help="switch the shrinkage of transferred log2FCs off entirely (--shrink-stage and --shrink-rule are refused with it)")
+    add_shrink_args(ap, twin="sidechain.eval.loco")
+    ap.add_argument("--var-floor", choices=["none", "poisson"], default="none",
+                    help="floor each pseudobulk arm's per-gene variance at its Poisson sampling "
+                         "variance and abstain on single-cell arms, so observed zero spread stops "
+                         "counting as certainty in the pooling weights; 'none' reproduces the "
+                         "historical weights bit-for-bit")
+    ap.add_argument("--coverage-tiers", metavar="CUT:FACTOR,...",
+                    help="weight each source's per-gene vote by how many cells' worth of "
+                         "evidence stands behind that gene (n_eff), as cut:factor pairs, "
+                         "e.g. '3:0.10,10:0.50' -- below n_eff 3 keep a tenth of the weight, "
+                         "3 to 10 keep half, at or above 10 keep it all. Factors must be "
+                         "positive: this downweights, it never silences. Same knob in "
+                         "sidechain.eval.loco, so a mirror-scored arm submits verbatim.")
+    ap.add_argument("--transfer-floor", action="append", default=[], metavar="NAME=TAU2",
+                    help="add a measured per-source transfer-error floor tau^2 to that "
+                         "source's variance before it becomes a pooling weight, keyed by the "
+                         "source file's basename stem (repeatable), e.g. "
+                         "'h1_pseudobulk=0.0104'. Caps that source's weight at 1/tau^2 so it "
+                         "cannot claim more certainty than its measured error against a "
+                         "held-out line supports. Fitted, never tuned. Same knob in "
+                         "sidechain.eval.loco, so a mirror-scored arm submits verbatim.")
+    add_neighbour_args(ap, twin="sidechain.eval.loco")
+    add_variance_args(ap, twin="sidechain.eval.loco")
+    ap.add_argument("--limit-perts", type=int, help="build only the first N perturbations (pipeline tests)")
+    ap.add_argument("--seed", type=int, default=20260821)
+    ap.add_argument("--dispersion", choices=["poisson", "even"], default=None,
+                    help="endpoint of the emission dial (default: even); exclusive with "
+                         "--emit-lambda (see count_emitters.PoissonEmitter)")
+    ap.add_argument("--emit-lambda", type=float, default=None, metavar="LAM",
+                    help="emission-sharpening dial in [0, 1]: 0 = even cells, 1 = poisson cells, "
+                         "interior values narrow the emitted cloud toward the mean (exact "
+                         "variance law: count_emitters.PoissonEmitter). Same knob in "
+                         "sidechain.eval.loco, so a mirror-scored arm submits verbatim.")
+    ap.add_argument("--out", required=True, help="output stem; writes <out>.h5ad and <out>.vcc")
+    ap.add_argument("--no-pack", action="store_true")
+    ap.add_argument("--min-libsize", type=float, default=CONTROL_MIN_LIBSIZE,
+                    help="drop control cells below this depth from the library-size pool "
+                         "(same knob and same default as sidechain.eval.loco)")
+    ap.add_argument("--log-bias-correct", action="store_true",
+                    help="add back the second-order bias of log2 of a noisy mean (`Var(m)/(2(m+c)^2 ln2)`), per arm, before pooling. The control arm is far deeper than any perturbed arm, so the two biases do not cancel and what is left is a shared negative shift on low-expression genes -- 9-12%% of a median delta on our genome-wide sources. Measured to cost 0.0027 raw pds; off by default (private research/ideas/batch-effect-diagnostics.md, T18 check 6)")
+    args = ap.parse_args(argv)
+    cov_tiers = parse_coverage_tiers(args.coverage_tiers)
+    check_neighbour_args(ap, args)
+    check_shrink_args(ap, args)
+    args._variance_model = check_variance_args(ap, args)     # T98; parsed once, read by variance_kwargs
+    variance_moved = not args._variance_model.is_shipped
+    if ((args.shrink_k, args.shrink_stage, args.shrink_rule) != (1.0, "source", "garrote")
+            and args.emitter != "delta-transfer"):
+        ap.error("--shrink-k, --shrink-stage and --shrink-rule act on pooled per-target deltas, "
+                 "so they only apply to delta-transfer")
+    if variance_moved and args.emitter != "delta-transfer":
+        ap.error("--variance-model acts on the pooling weights of per-target deltas, so it only "
+                 "applies to delta-transfer")
+    if args.neighbour_w and args.emitter != "delta-transfer":
+        ap.error("--neighbour-w fuses pooled per-target deltas, so it only applies to "
+                 "delta-transfer")
+    if args.gamma != 1.0 and args.emitter != "delta-transfer":
+        ap.error("--gamma transforms pooled per-target deltas, so it only applies to "
+                 "delta-transfer")
+    if args.emit_lambda is not None and args.dispersion is not None:
+        ap.error("--dispersion and --emit-lambda are one dial (even is 0, poisson is 1) -- pass one")
+    if args.emit_lambda is not None and not 0.0 <= args.emit_lambda <= 1.0:
+        # Same check as the emitter's, but before any work: the constructor only
+        # runs inside the write loop, an hour into a full build.
+        ap.error(f"--emit-lambda must be in [0, 1], got {args.emit_lambda}")
+    if args.emit_lambda is None and args.dispersion is None:
+        args.dispersion = "even"    # the historical default of this entry point
+    if args.alpha_bulk is not None:
+        if args.emitter != "delta-transfer":
+            ap.error("--alpha-bulk splits the amplitude of pooled per-target deltas, so it only "
+                     "applies to delta-transfer")
+        if args.dispersion == "even" or args.emit_lambda == 0.0:
+            ap.error("--alpha-bulk needs a depth spread (--emit-lambda > 0 or --dispersion "
+                     "poisson): at lambda 0 the pseudobulk and the per-cell mean coincide")
+    if args.bulk_anchor != "mean_cpm":
+        if args.emitter != "delta-transfer":
+            ap.error("--bulk-anchor pooled moves the pseudobulk of pooled per-target deltas, so "
+                     "it only applies to delta-transfer")
+        if args.dispersion == "even" or args.emit_lambda == 0.0:
+            ap.error("--bulk-anchor pooled needs a depth spread (--emit-lambda > 0 or "
+                     "--dispersion poisson): at lambda 0 the pseudobulk and the per-cell mean "
+                     "coincide")
+    # the pseudobulk channel's amplitude, or None for one channel: a pooled anchor is a
+    # two-channel emission even at one amplitude (the same rule as eval.loco)
+    bulk_alpha = (args.alpha_bulk if args.alpha_bulk is not None
+                  else args.alpha if args.bulk_anchor != "mean_cpm" else None)
+    if args.dual_fallback != "template" and bulk_alpha is None:
+        ap.error("--dual-fallback only acts on a two-channel emission -- pass --alpha-bulk or "
+                 "--bulk-anchor pooled")
+    if args.emit_shape != "template" and bulk_alpha is None:
+        ap.error("--emit-shape controls needs the two-channel emission -- pass --alpha-bulk or "
+                 "--bulk-anchor pooled")
+    if args.scatter_table is not None and bulk_alpha is None:
+        ap.error("--scatter-table acts on the two-channel emission -- pass --alpha-bulk or "
+                 "--bulk-anchor pooled")
+
+    stem = Path(args.out).name
+    check_out_leaf(stem, context="submit.build", require_slug=True)
+    rule_moved = (args.shrink_k, args.shrink_stage, args.shrink_rule) != (1.0, "source", "garrote")
+    named = STEM_RE.match(stem) if CLAIMS_RE.match(stem) else None
+    if named:
+        # The fold-change shrinkage rule's letter is `s` (ADR 0005, registered 2026-10-03): shrinkage
+        # on at the baseline garrote is unlettered, `n` is the same object switched off, and `s` is
+        # any other rule, named in the slug. Only `s` is checked against the flags here; `n` against
+        # --no-shrink stays the name checker's business, as it was.
+        letters = named.group(3)
+        if rule_moved and args.no_shrink:
+            # reachable only as --no-shrink --shrink-source X --shrink-k K: the depth-aware arm (d)
+            # at a harder threshold. It would need n and s together, which is no name.
+            ap.error(f"'{stem}': the depth-aware arm at a moved --shrink-k has no registered name "
+                     "yet (ADR 0005) -- build it under a freeform stem")
+        if rule_moved and "s" not in letters:
+            ap.error(f"'{stem}': --shrink-k / --shrink-stage / --shrink-rule are off the baseline "
+                     "garrote, so the name must carry the letter s (ADR 0005) -- or build under a "
+                     "freeform stem")
+        if "s" in letters and not rule_moved:
+            ap.error(f"'{stem}' carries the letter s, which says the shrinkage rule moved off the "
+                     "baseline garrote, but --shrink-k / --shrink-stage / --shrink-rule are at their "
+                     "defaults")
+        if "s" in letters and "n" in letters:
+            ap.error(f"'{stem}' carries both n (shrinkage off) and s (another shrinkage rule): one "
+                     "object, two states -- pick one")
+        # What the emitted cells are built from is letter `r` (ADR 0005, registered 2026-10-07): no
+        # letter is the emitter's own drawn cells, `r` any other start, named in the slug
+        # (`ctrlshape` = --emit-shape controls, the context's control cells re-rated).
+        shape_moved = args.emit_shape != "template"
+        if shape_moved and "r" not in letters:
+            ap.error(f"'{stem}': --emit-shape is off the drawn template, so the name must carry the "
+                     "letter r (ADR 0005) -- or build under a freeform stem")
+        if "r" in letters and not shape_moved:
+            ap.error(f"'{stem}' carries the letter r, which says the emitted cells start from "
+                     "something other than the drawn template, but --emit-shape is at its default")
+        # Which genes a block's cells are made callable for is letter `h` (ADR 0005, registered
+        # 2026-10-08): no letter is every gene as the emission writes it, `h` a per-gene dial
+        # table (--scatter-table), named in the slug. It is its own object: `r` is what the cells
+        # are built from, `e` the emission dial for every gene alike.
+        head_moved = args.scatter_table is not None
+        if head_moved and "h" not in letters:
+            ap.error(f"'{stem}': --scatter-table makes a chosen set of genes callable, so the name "
+                     "must carry the letter h (ADR 0005) -- or build under a freeform stem")
+        if "h" in letters and not head_moved:
+            ap.error(f"'{stem}' carries the letter h, which says a per-gene table makes a chosen "
+                     "set of genes callable, but --scatter-table is not given")
+    if CLAIMS_RE.match(stem) and variance_moved:
+        # T98: the variance behind the pooling weight has no registered letter yet (ADR 0005): an
+        # arm is scored on the mirror under a freeform label, and the letter is minted only when
+        # one first reaches the board.
+        ap.error(f"'{stem}' is named like a model, and --variance-model / --rule-variance have no "
+                 "registered knob letter yet (ADR 0005): register the letter first, or build under "
+                 "a freeform stem")
+    if (CLAIMS_RE.match(stem)
+            and (args.neighbour_select != "table" or args.neighbour_picks is not None)):
+        # The neighbour arm's letter `k` says "the table's k nearest" (ADR 0005); a moved
+        # selection rule would be built under letters that say the gate's pick.
+        ap.error(f"'{stem}' is named like a model, and --neighbour-select off its default / "
+                 "--neighbour-picks have no registered knob letter yet (ADR 0005): register the "
+                 "letter first, or build under a freeform stem")
+    if not CLAIMS_RE.match(stem):
+        print(f"note: out stem '{stem}' carries no series tag -- fine for a probe, but a "
+              "board submission's stem starts with its lowercased short name (ADR 0005), "
+              "e.g. ser-2n_delta4_even_noshrink_v1", flush=True)
+
+    cfg = yaml.safe_load(resolve_config(args.challenge_config).read_text())
+    data_dir = challenge_data_dir(cfg)
+    control_files = challenge_control_files(cfg)          # refuses a context with no file, by name
+    genes = pd.read_csv(data_dir / cfg["gene_names_file"]).iloc[:, 0].astype(str).tolist()
+    if len(genes) != cfg["n_genes"]:
+        raise SystemExit(f"gene_names.csv read as {len(genes)} genes; config says {cfg['n_genes']} -- header handling?")
+    perts = pd.read_csv(data_dir / cfg["pert_counts_file"])[cfg["pert_col"]].astype(str).tolist()
+    if args.limit_perts:
+        perts = perts[: args.limit_perts]
+    contexts = challenge_contexts(cfg)
+    sub = cfg["submission"]
+    contract = Contract(
+        genes=genes, perturbations=perts, contexts=contexts, cells_per_pert=int(sub["cells_per_pert"]),
+        pert_col=cfg["pert_col"], context_col=cfg["context_col"], control_label=cfg["control_label"],
+        max_counts_per_cell=int(sub["max_counts_per_cell"]), max_cells=int(sub["max_cells"]),
+        max_stored_entries=int(sub["max_stored_entries"]),
+    )
+    axis = np.asarray(genes)
+    # T85: read before the pooling, so a table the build cannot take stops it in seconds
+    scatter_of, scatter_record = (read_context_scatter_table(args.scatter_table, axis, perts, contexts)
+                                  if args.scatter_table is not None else (None, None))
+
+    # Machine record of what produced this artifact. The stem and the stdout
+    # are indistinguishable between, say, a shrunk and an unshrunk build of the
+    # same sources; re-running arms to prove which flags produced a file is the
+    # incident class this sidecar exists to close.
+    out = Path(args.out).expanduser()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.with_suffix(".args.json").write_text(json.dumps(vars(args), indent=1, default=str) + "\n")
+
+    # -- per-perturbation log2FC vectors (None = no shift)
+    t0 = time.time()
+    shifts: dict[str, np.ndarray | None] = {p: None for p in perts}
+    fallback = 0
+    pool_stats: dict = {}
+    # the neighbour pool's fits under a moved shrinkage rule, counted apart from the targets'
+    # (None keeps every default call exactly what it was)
+    pool_fit_stats: dict | None = {} if rule_moved and not args.no_shrink and args.neighbour_w else None
+    if args.emitter in ("h1-mean-shift", "delta-transfer"):
+        if not args.h1_cache:
+            raise SystemExit("--h1-cache is required for this emitter")
+        h1 = PseudobulkSums.load(args.h1_cache)
+        # Named like every other source. `--h1-cache` and `--gwps-cache` predate `--source`
+        # and load outside `sources_from_specs`, so without this the two oldest arms in the
+        # pool are the only ones `--transfer-floor` cannot address -- and H1 is the arm whose
+        # variance the calibration measurement found most wrong.
+        h1.sidechain_name = Path(args.h1_cache).expanduser().stem
+        h1.sidechain_path = Path(args.h1_cache).expanduser()
+        generic = h1_mean_shift(h1, cfg["control_label"], axis)
+        shifts = {p: generic.copy() for p in perts}
+    sources = None
+    if args.emitter == "delta-transfer":
+        if not args.gwps_cache:
+            raise SystemExit("--gwps-cache is required for delta-transfer")
+        # (final-phase: before) The documented --gwps-cache was streamed with `--keep pert_counts.csv`
+        # and holds the validation panel's 272 targets only: on a new panel this arm stops voting
+        # and nothing says so, because the genome-wide X-Atlas arms keep `fallback 0`. Stream
+        # K562-gwps once with no --keep, then narrow it per panel (scripts/subset_pseudobulk_labels.py).
+        gwps = PseudobulkSums.load(args.gwps_cache)
+        gwps.sidechain_name = Path(args.gwps_cache).expanduser().stem
+        gwps.sidechain_path = Path(args.gwps_cache).expanduser()
+        sources = [(gwps, args.gwps_control), (h1, cfg["control_label"])]
+        sources += sources_from_specs(args.source, args.shrink_source)
+        # Appended, not special-cased: `pooled_delta` normalises both forms, so a
+        # source with no cells behind it enters the pool exactly like one that has
+        # them and nothing downstream needs to know which it was.
+        for path in args.lfc_source:
+            tab = LfcTable.load(path)
+            tab.sidechain_name = Path(path).expanduser().stem
+            sources.append(tab)
+        sources = apply_transfer_floors(sources, parse_transfer_floor(args.transfer_floor))
+        # T98: the per-source dispersion fits, checked against each source's axis and sha256
+        sources = apply_dispersion_fits(sources, parse_dispersion_fits(args.dispersion_fit))
+        args._variance_model.check_sources(sources)
+        if variance_moved:
+            out.with_suffix(".variance.json").write_text(json.dumps(
+                {**args._variance_model.record(sources), "rule_variance": args.rule_variance},
+                indent=1) + "\n")
+        if args.gamma == 1.0:
+            covered = []
+            for p in perts:
+                d = pooled_delta(p, sources, axis, **shrink_kwargs(args), **variance_kwargs(args),
+                                 log_bias_correct=args.log_bias_correct,
+                                 var_floor=args.var_floor, coverage_tiers=cov_tiers,
+                                 stats=pool_stats)
+                if d is None:
+                    fallback += 1          # keep the generic shift
+                else:
+                    shifts[p] = d
+                    covered.append(p)
+            if args.neighbour_w:
+                fuse_neighbours(args, shifts, covered, sources, axis, cov_tiers,
+                                out.with_suffix(".neighbour.json"), fit_stats=pool_fit_stats)
+            if variance_moved:
+                # the counts the model left behind, targets and neighbour pool apart (T98)
+                rec_path = out.with_suffix(".variance.json")
+                rec = json.loads(rec_path.read_text())
+                rec["target_counts"] = {k: v for k, v in pool_stats.items() if k.startswith("variance_")}
+                rec["neighbour_pool_counts"] = {k: v for k, v in (pool_fit_stats or {}).items()
+                                                if k.startswith("variance_")}
+                rec_path.write_text(json.dumps(rec, indent=1) + "\n")
+    gene_pos = {g: i for i, g in enumerate(genes)}
+
+    def finalize(shift_map):
+        # alpha scales the pooled vector; gamma (if any) acted per source inside the pool.
+        # With --alpha-bulk the SAME pooled vector is also scaled by the pseudobulk amplitude
+        # (taken before alpha touches it) and pinned identically; the emitter gets both.
+        bulk_map = {} if bulk_alpha is not None else None
+        for p, vec in shift_map.items():
+            if vec is not None:
+                if bulk_map is not None:
+                    b = vec * bulk_alpha
+                    if p in gene_pos:
+                        b[gene_pos[p]] = TARGET_SELF_LOG2FC
+                    bulk_map[p] = b
+                vec *= args.alpha
+                if p in gene_pos:
+                    vec[gene_pos[p]] = TARGET_SELF_LOG2FC
+        return bulk_map
+
+    def pool_line(prefix, fb):
+        line = f"{prefix}; fallback-to-generic: {fb}"
+        if pool_stats.get("gene_weights"):
+            frac = pool_stats.get("gene_weights_var_le_1e-6", 0) / pool_stats["gene_weights"]
+            line += (f"; var<=1e-6: {frac:.1%} of gene weights"
+                     f"; abstained source-arms: {pool_stats.get('source_arms_abstained', 0)}"
+                     f"; zero-weight targets: {pool_stats.get('targets_zero_weight', 0)}")
+        if pool_stats.get("gamma_genes_transformed"):
+            line += (f"; gamma-transformed gene-arms: {pool_stats['gamma_genes_transformed']}"
+                     f"; multiplier clamps: {pool_stats.get('gamma_mult_clamped', 0)}")
+        if pool_stats.get("coverage_gene_arms"):
+            dem = pool_stats.get("coverage_gene_arms_demoted", 0)
+            line += (f"; coverage-tiered: {dem / pool_stats['coverage_gene_arms']:.1%} of gene "
+                     f"weights demoted")
+            if pool_stats.get("coverage_sources_unweighted"):
+                line += (f" ({pool_stats['coverage_sources_unweighted']} source-arms have no "
+                         "cells and kept full weight)")
+        return line
+
+    per_context_shifts = None
+    bulk_shifts = None
+    if args.emitter == "delta-transfer" and args.gamma != 1.0:
+        # gamma re-expresses each source's fold change against THIS context's control
+        # profile, so the shifts stop being shareable across contexts: pool once per
+        # context, inside the write loop, on the profile the emitter itself anchors on
+        # (the axis-vs-gene_names check has already run by the time this is called).
+        def per_context_shifts(prof):
+            local = {p: generic.copy() for p in perts}
+            fb = 0
+            ctrl_cpm = prof.fraction * 1e6
+            for p in perts:
+                d = pooled_delta(p, sources, axis, **shrink_kwargs(args), **variance_kwargs(args),
+                                 log_bias_correct=args.log_bias_correct,
+                                 var_floor=args.var_floor, coverage_tiers=cov_tiers,
+                                 gamma=args.gamma, ctrl_tgt_cpm=ctrl_cpm,
+                                 stats=pool_stats)
+                if d is None:
+                    fb += 1
+                else:
+                    local[p] = d
+            local_bulk = finalize(local)
+            print(pool_line(f"  {prof.name}: gamma={args.gamma:g} shifts ready", fb), flush=True)
+            return local, local_bulk
+
+        print(f"gamma={args.gamma:g}: shifts are context-specific and pooled inside the "
+              "write loop", flush=True)
+    else:
+        bulk_shifts = finalize(shifts)
+        print(pool_line(f"shifts ready in {time.time() - t0:.0f}s", fallback), flush=True)
+    if rule_moved and not args.no_shrink:
+        # Written as soon as the shifts exist, before the write loop: every fit is done by now (the
+        # adaptive rule is refused with gamma != 1, the one path that pools inside the loop).
+        write_shrink_record(out.with_suffix(".shrink.json"), args, pool_stats, pool_fit_stats)
+
+    # -- write
+    h5ad = out.with_suffix(".h5ad")
+    if args.limit_perts:
+        pd.DataFrame({cfg["pert_col"]: perts}).to_csv(out.with_suffix(".pert_counts.csv"), index=False)
+    t0 = time.time()
+    dual_fallbacks: dict[str, int] = {}
+    # which perturbations fell back, per context and per rung, with why the requested pair failed
+    fell_back: dict[str, dict[str, list]] = {}
+    on_fail = "fallback" if args.dual_fallback == "template" else "anchor"
+    # T85: every block as real control cells re-rated to the prediction. Off, nothing below changes.
+    shaped = args.emit_shape == "controls"
+    shape_kw = {"shape": True} if shaped else {}
+    in_shape: dict[str, dict] = {}
+    with SubmissionWriter(h5ad, contract) as w:
+        for ci, ctx in enumerate(contexts):
+            prof = ContextProfile.from_controls(data_dir / control_files[ctx], ctx, min_libsize=args.min_libsize,
+                                                **({"keep_cells": True} if shaped else {}))
+            if list(prof.genes) != genes:
+                raise SystemExit(f"context {ctx} var_names differ from gene_names.csv")
+            ctx_shifts, ctx_bulk = ((shifts, bulk_shifts) if per_context_shifts is None
+                                    else per_context_shifts(prof))
+            em = PoissonEmitter(prof, seed=args.seed + ci, dispersion=args.dispersion,
+                                lam=args.emit_lambda, bulk_anchor=args.bulk_anchor)
+            left_on_template: list[str] = []
+            held, unmet = 0, []                    # cells held to the emitter's caps; genes its solve left to the fit
+            dialled: dict[str, int] = {}           # target -> genes whose scatter its block carries
+            for k, p in enumerate(perts):
+                if ctx_bulk is None or ctx_shifts[p] is None:
+                    block = em.emit(contract.cells_per_pert, ctx_shifts[p])
+                else:
+                    # letter b: two amplitudes in one count matrix; a perturbation whose two
+                    # moments are jointly unreachable carries one amplitude and is counted.
+                    # (final-phase: knobs) Under --emit-shape controls a target no source covers is
+                    # re-rated to the generic shift it carries here, a block of a kind no mirror arm
+                    # has scored: eval.loco emits such a target as control cells with nothing
+                    # predicted. A/B/C have none (the log's fallback-to-generic: 0); read that count
+                    # on the first D/E/F build before a shaped entry goes up.
+                    scatter_kw = {}
+                    if scatter_of is not None and p in scatter_of[ctx]:
+                        scatter = np.ones(len(axis))
+                        scatter[scatter_of[ctx][p][0]] = scatter_of[ctx][p][1]
+                        scatter_kw = {"scatter": scatter}
+                    block = em.emit_dual(contract.cells_per_pert, ctx_shifts[p], ctx_bulk[p],
+                                         on_fail=on_fail, **shape_kw, **scatter_kw)
+                    if scatter_kw:                 # 0 on the template rung: that block carries none of it
+                        dialled[p] = int(getattr(em, "last_sharpened", 0) or 0)
+                    if shaped and not getattr(em, "last_shaped", False):
+                        left_on_template.append(p)
+                    elif shaped and getattr(em, "last_shape_unmet", None) is not None:
+                        held += int(em.last_shape_held or 0)
+                        unmet.append(int(em.last_shape_unmet))
+                    how = getattr(em, "last_dual", "dual")
+                    if how in ("anchor", "template"):
+                        fell_back.setdefault(ctx, {"anchor": [], "template": []}).setdefault(
+                            how, []).append([p, getattr(em, "last_dual_reason", None)])
+                w.add_block(block, ctx, p)
+                if (k + 1) % 50 == 0:
+                    print(f"  {ctx}: {k + 1}/{len(perts)} perturbations  {time.time() - t0:.0f}s", flush=True)
+            if shaped:
+                # a block the fit could not carry in the controls' shape falls to the drawn template
+                # (the last rung), where its genes are called for their shape again: count and name it
+                in_shape[ctx] = {"control_cells_kept": int(prof.n_cells),
+                                 "blocks_in_the_controls_shape": len(perts) - len(left_on_template),
+                                 "blocks_left_on_the_template": left_on_template,
+                                 "cells_held_to_the_caps": held,
+                                 "genes_left_unmet_a_block": ({"median": float(np.median(unmet)), "max": max(unmet)}
+                                                              if unmet else None)}
+                print(f"  {ctx}: emit-shape controls: {len(perts) - len(left_on_template)} of {len(perts)} "
+                      f"perturbations emitted as re-rated control cells ({prof.n_cells} kept)"
+                      + (f"; {held} cell(s) held to the caps" if held else ""), flush=True)
+                if left_on_template:
+                    # at one strength there is no middle rung: a failed fit returns the drawn
+                    # template, whose genes the scorer calls for their shape again
+                    print(f"  WARNING {ctx}: {len(left_on_template)} block(s) fell to the drawn template "
+                          f"and are NOT in the controls' shape: {', '.join(left_on_template)}", flush=True)
+            if scatter_record is not None:
+                # `targets_carrying_it` counts the blocks whose fit took the table's genes; a target
+                # that ended on the template rung carries none
+                scatter_record["contexts"][ctx] |= {
+                    "targets_carrying_it": int(sum(v > 0 for v in dialled.values())),
+                    "pairs_carried": int(sum(dialled.values())),
+                    "targets_listed_but_not_carrying": sorted(t for t, v in dialled.items() if v == 0)}
+                print(f"  {ctx}: scatter table: {sum(v > 0 for v in dialled.values())} of {len(perts)} "
+                      f"perturbations carry it ({sum(dialled.values())} of the "
+                      f"{scatter_record['contexts'][ctx]['pairs_applied']} pairs that apply to this "
+                      "context)", flush=True)
+            if ctx_bulk is not None:
+                # (final-phase: knobs) counted, never refused. A/B/C gave 1, 3 and 2 of 300; the
+                # count follows each context's control-depth envelope, so read it on the first
+                # D/E/F build before trusting that letter b is really in the file. The same count
+                # says whether the pooled anchor (letter w) fits at all: a context whose pooled and
+                # mean-CPM control profiles differ by more than the envelope allows puts EVERY
+                # perturbation on the template, under either --dual-fallback rung.
+                dual_fallbacks[ctx] = int(getattr(em, "dual_fallbacks", 0))
+                kept = int(getattr(em, "dual_fallbacks_anchor", 0))
+                # the default rung's line is the one SER-10abefnw's and SER-11abefknw's logs carry
+                tail = ("amplitude on the mean_cpm profile" if args.dual_fallback == "template" else
+                        f"amplitude, {dual_fallbacks[ctx] - kept} of them from the one-amplitude template")
+                print(f"  {ctx}: alpha_bulk={bulk_alpha:g} anchor={args.bulk_anchor}: "
+                      f"{dual_fallbacks[ctx]} of {len(perts)} perturbations carried one {tail}",
+                      flush=True)
+                if args.dual_fallback == "template" and fell_back.get(ctx):
+                    # names for the log only: the default rung's .dual.json keeps its shipped shape
+                    print(f"  {ctx}: fell back: "
+                          + ", ".join(f"{p} ({why})" for p, why in fell_back[ctx]["template"]), flush=True)
+    info = verify_h5ad(h5ad, contract)
+    if dual_fallbacks:
+        # absent bulk_anchor = mean_cpm, so the letter-b records already written stay as they are
+        anchor = {"bulk_anchor": args.bulk_anchor} if args.bulk_anchor != "mean_cpm" else {}
+        # the fallback rung and its per-target list are written only off the default: a
+        # template-rung build's record is byte for byte what SER-10abefnw and SER-11abefknw wrote
+        # (its names go to the log above). eval.loco's summary.json always carries both keys.
+        if args.dual_fallback != "template":
+            anchor["dual_fallback"] = args.dual_fallback
+            if fell_back:
+                anchor["dual_fallback_targets"] = fell_back
+        if shaped:                                 # written only when the knob is on
+            anchor["emit_shape"] = {"shape": args.emit_shape, "contexts": in_shape}
+        if scatter_record is not None:             # likewise
+            anchor["scatter_table"] = scatter_record
+        info = {**info, "alpha_bulk": args.alpha_bulk, **anchor, "dual_fallbacks": dual_fallbacks}
+        out.with_suffix(".dual.json").write_text(json.dumps(
+            {"alpha": args.alpha, "alpha_bulk": args.alpha_bulk, **anchor,
+             "dual_fallbacks": dual_fallbacks}, indent=1) + "\n")
+    print(json.dumps({"h5ad": str(h5ad), **info, "write_seconds": round(time.time() - t0)}), flush=True)
+    if not args.no_pack:
+        t0 = time.time()
+        vcc = pack_vcc(h5ad, out.with_suffix(".vcc"))
+        print(json.dumps({"vcc": str(vcc), "vcc_gb": round(vcc.stat().st_size / 1e9, 2), "pack_seconds": round(time.time() - t0)}))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

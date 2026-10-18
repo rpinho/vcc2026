@@ -1,0 +1,9 @@
+# Optional upstream Sidechain integrations only; unnecessary for our v4-v6 builder.
+# Install applicable third-party code/models under their own licenses.
+scanpy
+scperturb
+torch
+torch-geometric
+typer
+lamindb
+lamindb-setup

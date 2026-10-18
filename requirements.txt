@@ -1,0 +1,27 @@
+# Tested core environment; Python 3.12.13. Lance materializer additionally uses pylance==13.0.0.
+cell-eval2==0.18.0
+pdex==0.3.0
+numba-mwu==0.2.0
+numpy==2.5.4
+scipy==1.18.1
+anndata==0.13.4
+polars==2.0.0
+pandas==3.0.6
+h5py==3.16.0
+numba==0.68.0
+
+# Public-source readers and local package inspection
+pylance==13.0.0
+requests
+fsspec
+pyarrow
+zstandard
+psutil
+
+scikit-learn
+statsmodels
+threadpoolctl
+huggingface-hub
+PyYAML
+matplotlib
+pytest
