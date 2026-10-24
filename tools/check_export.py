@@ -5,7 +5,7 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-allowed_suffixes = {'.py', '.sh', '.md', '.txt', '.sha256'}
+allowed_suffixes = {'.py', '.sh', '.md', '.txt', '.sha256', '.mjs'}
 blocked_dirs = {'_codex', '__pycache__', 'artifacts', 'logs', 'ledger', 'locks',
                 'journals', 'raw', 'data', 'public_data', 'cache', 'v2_cache', 'out'}
 patterns = {
@@ -28,6 +28,8 @@ def main():
             continue
         if not p.is_file():continue
         count+=1;size+=p.stat().st_size
+        if p.stat().st_size > 20_000_000:
+            findings.append((str(rel),'file exceeds 20 MB'))
         if p.suffix not in allowed_suffixes and p.name not in {'.gitignore','LICENSE','ATLAS_LICENSE','SIDECHAIN_LICENSE','CELL_EVAL2_LICENSE'}:
             findings.append((str(rel),'unexpected file type'))
         try:text=p.read_text()

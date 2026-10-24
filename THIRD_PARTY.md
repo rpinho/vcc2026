@@ -3,6 +3,16 @@
 The top-level MIT license applies to our original code. The original notices below
 also apply to copied/adapted upstream code; they are retained verbatim.
 
+The 2026-10-23 export extends the same AtlasShift and Sidechain notices to
+`model_v7/vendor/` and `final_push/emitter/vendor/`. The original license files are unchanged. AtlasShift
+updates are adapted to memory-fused fitting and compiled integer rounding in
+our fast_fit.py / fast_round.py; Sidechain shrinkage remains unchanged. Later response-network,
+layout, independent verification and ablation code is our project code.
+Bill M's publicly described response-MLP idea is credited in
+[REPRODUCING.md](REPRODUCING.md); his implementation and checkpoints were not
+available and are not included. No new third-party model source was imported in
+this refresh. PyTorch is an external optional training/inference dependency.
+
 | Work | Source | Included code and notice | Reviewed revision |
 |---|---|---|---|
 | AtlasShift | https://github.com/kaipengm2/Virtual-Cell-Challenge-2026 | model_v4..v6/vendor/atlas_model.py and atlas_predict.py; rsi/vendor/atlas_model.py and atlas_release/; each ATLAS_LICENSE or LICENSE (MIT) | d24ce4fdae0cd7cba3ba29546cd8737094eae98a |

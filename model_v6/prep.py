@@ -26,7 +26,7 @@ def prep(name, perts, contexts, genes_csv=None, reserve_gib=22, delete_input=Fal
                VCC_DATA_U16='1', VCC_DEFER_ENCODING='1', VCC_DELETE_INPUT='1' if delete_input else '0', VCC_KEEP_U16='0', VCC_RESERVE_GIB=str(reserve_gib),
                OPENBLAS_NUM_THREADS='1', VECLIB_MAXIMUM_THREADS='1', OMP_NUM_THREADS='3', NUMBA_NUM_THREADS='3', POLARS_MAX_THREADS='3')
     cmd = ['nice', '-n', '19', (shutil.which('vcc') or 'vcc'), 'prep', str(inp), '-g', genes_csv, '--perts', str(perts),
-           '--contexts', contexts, '-o', str(out), '--force']
+           '--contexts', contexts, '-o', str(out)]
     t0 = time.time(); p = subprocess.Popen(cmd, env=env); print('prep PID', p.pid, flush=True); minimum = shutil.disk_usage('/').free
     try:
         while p.poll() is None:

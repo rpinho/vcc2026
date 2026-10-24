@@ -6,6 +6,11 @@ emission and local evaluation. We are publishing the implementation so others ca
 inspect it, reproduce components and build on it. This is an evolving research
 workbench, with historical experiments retained as source.
 
+**Best official validation: billmA 0.16438**, about rank **463 of 1,580**
+when recorded. We are well behind the leading entries and would welcome help.
+Start with [lessons and concrete open questions](LESSONS_AND_HELP_WANTED.md)
+and the [builder and reproduction guide](REPRODUCING.md). Issues and PRs welcome.
+
 `model_v4/` contains AtlasShift-anchor transfer and dual-summary experiments;
 `model_v5/` adds spread calibration, cross-source DE gating and control-axis removal;
 `model_v6/` generalizes the builder to arbitrary panels/contexts and adds coverage
@@ -15,9 +20,15 @@ launching, baseline reproduction and verification code. `competitors/monitor.py`
 monitors the public leaderboard. Machine-specific agent/launchd supervision,
 journals, credentials, datasets, weights and predictions are excluded.
 
+The refresh also includes `model_billm/` training and inference,
+`model_billm_pack/` and `model_billmB/` checked packaging, `model_v7/` and
+`model_v9/` emission experiments, and `final_push/` final builders and
+official-scorer ablations. See [REPRODUCING.md](REPRODUCING.md) for the source map,
+required local inputs and historical reproduction limits.
+
 ## Official validation scores
 
-Recorded on vcc2026-val-1, through 2026-10-18. All metrics below are scaled and
+Recorded on vcc2026-val-1, through the end of validation on 2026-10-22. All metrics below are scaled and
 rounded; higher is better. These are submitted scores, not local proxy estimates.
 
 | entry | overall | pds | mse | nmae | fid | reach | jac | what it was |
@@ -29,11 +40,38 @@ rounded; higher is better. These are submitted scores, not local proxy estimates
 | v4b dual-summary + ash shrinkage + guide | 0.1243 | 0.658 | 0 | 0.070 | -0.025 | 0.042 | -0.000 | dual-summary anchors + ash shrinkage + guide (model_v4/)|
 | v5a spread-calibrated v4a | **0.1499** | 0.678 | 0.078 | 0.094 | -0.020 | 0.071 | -0.001 | v4a anchors, per-context spread scaled to 1.0x the MSE noise credit (model_v5/)|
 | v5b DE-gated + spread-calibrated + control axes removed | **0.1528** | 0.680 | 0.082 | 0.109 | -0.031 | 0.077 | -0.000 | v5a + DE calls gated by cross-source sign agreement + top-50 control axes removed (model_v5/)|
+| v6 | — | — | — | — | — | — | — | arbitrary-panel builder and coverage fill; no official score recorded |
+| v7a / v7b | — | — | — | — | — | — | — | native bulk / selective-scatter experiments; validation attempts refused after the phase changed |
+| v8a layout-only | 0.1470 | 0.680 | 0.016 | 0.102 | -0.064 | 0.162 | -0.015 | layout changes on the exact v5b totals |
+| v8b amplitude | 0.1412 | 0.708 | 0.095 | -0.059 | -0.060 | 0.178 | -0.015 | increased response amplitude |
+| v9a | 0.16135 | — | — | — | — | — | — | v5b totals with confidence-ordered DE layout |
+| v9b | 0.12049 | — | — | — | — | — | — | alternative v9 layout |
+| slim_v5b | 0.08833 | 0.667 | 0 | -0.276 | -0.048 | 0.200 | -0.013 | real-control sampling with gain and excessive spread |
+| **billmA** | **0.16438** | **0.706** | **0.061** | **0.116** | **-0.066** | **0.186** | **-0.016** | response MLP blend + v5b amplitude + v9 layout |
 
-v5b is our best recorded submission (**0.1528**). No official v6 score is recorded.
+Only numbers present in the project's official score record are copied here;
+missing components stay blank (—). Historical ranks are approximate snapshots,
+not the current position of the team's latest entry on the live board.
 The older v1–v3 entries provide history; their complete original directories are
 not part of this export. Local numerical parity does not reproduce an official
 score, and this export has not been rerun on the full official panel.
+
+## FINAL PHASE
+
+The [final phase](https://virtualcellchallenge.org/) uses vcc2026-test-1 and new
+D/E/F contexts. Scores stay hidden until the organizers publish them. Final
+submission deadline: **November 5, 2026, 23:59 UTC**.
+
+| Submitted (UTC) | Entry | Recipe / status |
+|---|---|---|
+| 2026-10-22 05:23 | BKgFJX4gmteiZB88HSLe | billmA v9 layout safety recipe; submitted, score hidden |
+| 2026-10-22 08:13 | LIREtFnPJLkMXZprp7Q9 | direction-knob variant; superseded, score hidden |
+| **2026-10-23 01:03** | **5NeeoWn96lfm23hgExcm** | **current last entry: billmA v9 layout safety recipe**, same package as the first entry; score hidden |
+
+The last entry was restored after the direction-knob variant lost about 0.008
+locally on an official-scorer ablation. That comparison is local evidence, not a
+final-test score. This repository contains local builders and packagers; publishing
+it does not submit or change an entry.
 
 ## Setup and checks
 

@@ -48,3 +48,13 @@ runs/
 *.tar
 *.gz
 *.zst
+
+# Later model/receipt output, never public inputs.
+**/data/
+checkpoints/
+*.csv
+*.json
+*.partial
+*.tmp
+*.zip
+*.shad

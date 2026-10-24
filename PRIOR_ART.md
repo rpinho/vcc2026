@@ -1,4 +1,31 @@
-# Prior art and publication scope — 2026-10-18
+# Prior art and publication scope — refreshed 2026-10-23
+
+The 2026-10-23 refresh began by reading the original prior-art review, official
+score record and the later public-code census before exporting additional code.
+Our best recorded validation result is now **billmA 0.16438**. This is our
+reconstruction of a publicly described response MLP, not the original author's
+implementation or a reproduction of that author's score.
+
+Fresh public reads include GitHub repository searches sorted by update time for
+"virtual cell challenge", "vcc2026", "cell-eval", "perturbation prediction 2026"
+and "State model arc"; the official challenge website; Arc's State commit history;
+and the cell-eval2 changelog. Sidechain's public README now reports SER-29 at
+0.2226, with broader source coverage and context-dependent bulk strength. Its
+exact scored settings and assets have not been reproduced here.
+
+- [Sidechain source and reported results](https://github.com/saberhq/sidechain)
+- [Official final-phase dates and hidden-score policy](https://virtualcellchallenge.org/)
+- [cell-eval2 changelog](https://github.com/ArcInstitute/cell-eval2/blob/main/CHANGELOG.md):
+  0.20.0 adds evaluation settings/results replay. The historical experiments in
+  this release used 0.18.0; no silent scorer upgrade or new score claim is made.
+- [Arc's PIE release](https://arcinstitute.org/news/pie) predates this refresh;
+  source/weights remain excluded under their own terms.
+
+The dated 2026-10-18 observations below are retained as history. This refresh
+publishes existing experiments, including failures; it makes no new performance
+or record claim. No complete hidden official score was reproduced locally.
+
+## Original publication review — 2026-10-18
 
 This export packages existing work; it introduces no new model or performance claim.
 The original project prior-art review (2026-10-18) was read before assembling this directory.
