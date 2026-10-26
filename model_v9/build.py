@@ -35,7 +35,7 @@ def main():
   summary=[]
   for ci,c in enumerate('ABC'):
    rows=[r for r in records[name] if r['context']==c];T=totals[ci];L=np.log1p(50000*T/T.sum(1,keepdims=True));B=float(_across_pert_budget(L,cols,weights));independent=gates_core.across_pert_budget(L,cols,gates_core.row_weights(300,len(genes),cols));assert np.isclose(B,independent,atol=1e-12)
-   claim=float(weights@np.array([r['jk'] for r in rows]));oldclaim=float(weights@np.array([r['v5b_jk'] for r in rows]));calls=[r['n_calls'] for r in rows]
+   claim=float(weights @ np.array([r['jk'] for r in rows]));oldclaim=float(weights @ np.array([r['v5b_jk'] for r in rows]));calls=[r['n_calls'] for r in rows]
    summary.append(dict(context=c,B=B,claim=claim,v5b_claim=oldclaim,B_over_claim=B/claim,uncapped_usable_credit=min(B,claim),v5b_uncapped_usable_credit=min(B,oldclaim),calls_min_median_max=[min(calls),float(np.median(calls)),max(calls)],confidence_rho_min_median=[float(min(r['confidence_rho'] for r in rows)),float(np.median([r['confidence_rho'] for r in rows]))],max_mean_CPM_L1=max(r['mean_CPM_L1'] for r in rows),totals_depths_nonDE_exact=True))
   runtime.save(R/f'artifacts/{name}_gates.json',dict(status='COMPLETE independent prediction-side diagnostics; hidden scores unverified',contexts=summary,records=records[name]))
  runtime.save(R/'artifacts/build_complete.json',dict(shape=[360000,18533],groups_per_candidate=900,seconds=time.time()-start))

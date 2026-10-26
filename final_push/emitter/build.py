@@ -134,7 +134,7 @@ def main(args):
     else:writer.append(sparse.csr_matrix(x),c,targets[i])
     if i%20==0:print(name,c,i,'elapsed_s',round(time.time()-start),'nnz',writer.nnz if writer else None,flush=True)
    if not args.fixture:
-    P=np.array(P);Pn=P/P.sum(1,keepdims=True);ctx.info.update(B_emitted=v5.budget(Pn,targets,genes),claim_pred_emitted=float(ctx.w@np.array(jks)),claim_control_capped_emitted=float(ctx.w@np.minimum(jks,ctx.cap_jk)),jk_range=[float(np.min(jks)),float(np.max(jks))]);ctx.info['B_over_pred_claim']=ctx.info['B_emitted']/ctx.info['claim_pred_emitted'];ctx.info['B_over_control_capped_claim']=ctx.info['B_emitted']/ctx.info['claim_control_capped_emitted']
+    P=np.array(P);Pn=P/P.sum(1,keepdims=True);ctx.info.update(B_emitted=v5.budget(Pn,targets,genes),claim_pred_emitted=float(ctx.w @ np.array(jks)),claim_control_capped_emitted=float(ctx.w @ np.minimum(jks,ctx.cap_jk)),jk_range=[float(np.min(jks)),float(np.max(jks))]);ctx.info['B_over_pred_claim']=ctx.info['B_emitted']/ctx.info['claim_pred_emitted'];ctx.info['B_over_control_capped_claim']=ctx.info['B_emitted']/ctx.info['claim_control_capped_emitted']
    recs.append(ctx.info);runtime.save(rt/'artifacts'/f'{name}_progress.json',dict(contexts=recs,seconds=time.time()-start));print('CONTEXT DONE',name,json.dumps(ctx.info),flush=True)
    del ctx;gc.collect()
  finally:

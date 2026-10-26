@@ -11,6 +11,10 @@ when recorded. We are well behind the leading entries and would welcome help.
 Start with [lessons and concrete open questions](LESSONS_AND_HELP_WANTED.md)
 and the [builder and reproduction guide](REPRODUCING.md). Issues and PRs welcome.
 
+Latest: [October 26 research update](RESEARCH_UPDATE_20261026.md) adds local
+H1 diagnostics, negative candidate comparisons and selected analysis source.
+There is no new official validation score.
+
 `model_v4/` contains AtlasShift-anchor transfer and dual-summary experiments;
 `model_v5/` adds spread calibration, cross-source DE gating and control-axis removal;
 `model_v6/` generalizes the builder to arbitrary panels/contexts and adds coverage

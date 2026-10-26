@@ -99,3 +99,26 @@ weight or package is checksummed as part of this publication job.
 
 Final scan results are recorded after the source tree is complete. Any privacy
 or secret finding blocks publication; none may be silently allowlisted.
+
+## October 26 source refresh
+
+This refresh selects five analysis/scoring modules from a fixed workbench
+snapshot and publishes a newly written aggregate result summary. It preserves
+the previous public source export and its license exclusions. Source normalization replaces a personal interpreter path with `python`.
+Spaces around existing NumPy matrix products prevent email-detector false
+positives without changing their calculations. No private
+Git history, model/data arrays, receipts, raw responses or operational notes
+are transferred. Official validation is unchanged; local SEARCH scores are
+labelled separately. The public score ledger now includes the entries already
+present in the README.
+
+The 2026-10-23 publication-rules review above is the last substantive rules
+review; the October 26 web reader returned only the site's loading shell. This
+refresh does not assert a new organizer clearance or change participation.
+
+Required publication checks: full source-tree secret and private-term scans,
+outgoing commit/diff scans, source/privacy checker, source manifest, diff
+whitespace, and synthetic aggregation/layout-bound checks. No full historical
+campaign, private dataset, package build or challenge submission is run. The
+selected source release is explicitly partial; its absent inputs must be
+regenerated rather than bypassing provenance checks.

@@ -97,3 +97,11 @@ Please open an [issue](https://github.com/rpinho/vcc2026/issues) or send a PR.
 Small reproducible comparisons, negative results and corrections are welcome.
 Share only material you have rights to publish; public contributions do not
 change registered team membership or submission rules.
+
+## October 26 follow-up
+
+The [new local diagnostics](RESEARCH_UPDATE_20261026.md) show an expression-MSE
+improvement that loses the six-component composite. The fitted STRING/manifold
+candidates failed the registered adoption rule on a disjoint-target H1 test.
+The final safety entry remains the incumbent; local diagnostics do not supply
+a new official score or an accepted replacement.
