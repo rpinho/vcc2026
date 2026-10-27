@@ -1,0 +1,62 @@
+{
+  "pooled": {
+    "map": {
+      "h": 2,
+      "lambda_relative": 0.1,
+      "rank": 0,
+      "weight": 1.0,
+      "training_macro_cross": 0.13742448531711188,
+      "training_recipients": [
+        "H1",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.20147034583904844
+    },
+    "bounded": {
+      "h": 2,
+      "lambda_relative": 0.1,
+      "rank": 0,
+      "weight": 0.05,
+      "training_macro_cross": 0.14792272837001894,
+      "training_recipients": [
+        "H1",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.004916582557579745
+    }
+  },
+  "control": {
+    "map": {
+      "h": 2,
+      "lambda_relative": 0.1,
+      "rank": 0,
+      "weight": 1.0,
+      "training_macro_cross": 0.14217056860935293,
+      "training_recipients": [
+        "H1",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.1932321145469333
+    },
+    "bounded": {
+      "h": 2,
+      "lambda_relative": 0.1,
+      "rank": 0,
+      "weight": 0.05,
+      "training_macro_cross": 0.14820897008999304,
+      "training_recipients": [
+        "H1",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.004843970955056372
+    }
+  }
+}

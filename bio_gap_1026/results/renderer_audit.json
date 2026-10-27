@@ -1,0 +1,1025 @@
+{
+  "status": "PASS",
+  "groups": 168,
+  "seconds": 66.20047083302052,
+  "comparison": [
+    {
+      "target": "AASS",
+      "max_abs_response_error": 0.001065237546236934,
+      "L2_difference": 0.05127503222687953,
+      "counts": 23440620
+    },
+    {
+      "target": "ACLY",
+      "max_abs_response_error": 0.0010758685695550674,
+      "L2_difference": 0.04875646841576866,
+      "counts": 23440620
+    },
+    {
+      "target": "ACTN1",
+      "max_abs_response_error": 0.0010716385965854201,
+      "L2_difference": 0.051270734417815024,
+      "counts": 23440620
+    },
+    {
+      "target": "ADNP",
+      "max_abs_response_error": 0.0010732936193447514,
+      "L2_difference": 0.04929601368570922,
+      "counts": 23440620
+    },
+    {
+      "target": "ANKZF1",
+      "max_abs_response_error": 0.001072106236303473,
+      "L2_difference": 0.04877061722503165,
+      "counts": 23440620
+    },
+    {
+      "target": "ANXA6",
+      "max_abs_response_error": 0.0010812685320039008,
+      "L2_difference": 0.05149687008251639,
+      "counts": 23440620
+    },
+    {
+      "target": "APOE",
+      "max_abs_response_error": 0.001070340728770778,
+      "L2_difference": 0.049672962520322855,
+      "counts": 23440620
+    },
+    {
+      "target": "ARID3A",
+      "max_abs_response_error": 0.0010736374765132279,
+      "L2_difference": 0.05002589406128935,
+      "counts": 23440620
+    },
+    {
+      "target": "ARPC2",
+      "max_abs_response_error": 0.0010672188057587956,
+      "L2_difference": 0.05041423633938457,
+      "counts": 23440620
+    },
+    {
+      "target": "ASF1A",
+      "max_abs_response_error": 0.0010728347983002427,
+      "L2_difference": 0.05140256922912901,
+      "counts": 23440620
+    },
+    {
+      "target": "ATF4",
+      "max_abs_response_error": 0.0010675006778933889,
+      "L2_difference": 0.050188969120193876,
+      "counts": 23440620
+    },
+    {
+      "target": "ATP6V0B",
+      "max_abs_response_error": 0.0010677531007555058,
+      "L2_difference": 0.048094210076076144,
+      "counts": 23440620
+    },
+    {
+      "target": "ATP6V0C",
+      "max_abs_response_error": 0.0010623638221762058,
+      "L2_difference": 0.04741131263239103,
+      "counts": 23440620
+    },
+    {
+      "target": "BECN1",
+      "max_abs_response_error": 0.0010733242083132031,
+      "L2_difference": 0.05144364612164879,
+      "counts": 23440620
+    },
+    {
+      "target": "BRD9",
+      "max_abs_response_error": 0.0010723794979765775,
+      "L2_difference": 0.04836952815614955,
+      "counts": 23440620
+    },
+    {
+      "target": "BRPF1",
+      "max_abs_response_error": 0.001072136327882093,
+      "L2_difference": 0.04879907406537683,
+      "counts": 23440620
+    },
+    {
+      "target": "CD276",
+      "max_abs_response_error": 0.0010730203766485904,
+      "L2_difference": 0.048546134502608154,
+      "counts": 23440620
+    },
+    {
+      "target": "CDC25B",
+      "max_abs_response_error": 0.0010744252153300144,
+      "L2_difference": 0.05127647740046935,
+      "counts": 23440620
+    },
+    {
+      "target": "CENPB",
+      "max_abs_response_error": 0.0010752493981295115,
+      "L2_difference": 0.051184235602192464,
+      "counts": 23440620
+    },
+    {
+      "target": "CNN3",
+      "max_abs_response_error": 0.0010710583869580133,
+      "L2_difference": 0.051278492887398636,
+      "counts": 23440620
+    },
+    {
+      "target": "COASY",
+      "max_abs_response_error": 0.001063759876093622,
+      "L2_difference": 0.049965877925554146,
+      "counts": 23440620
+    },
+    {
+      "target": "COL6A1",
+      "max_abs_response_error": 0.0010652850932557007,
+      "L2_difference": 0.051258502064472404,
+      "counts": 23440620
+    },
+    {
+      "target": "COX4I1",
+      "max_abs_response_error": 0.0010741143191024425,
+      "L2_difference": 0.05134494936676843,
+      "counts": 23440620
+    },
+    {
+      "target": "COX6C",
+      "max_abs_response_error": 0.001078046337858133,
+      "L2_difference": 0.05068119456460752,
+      "counts": 23440620
+    },
+    {
+      "target": "CREM",
+      "max_abs_response_error": 0.00108344364826558,
+      "L2_difference": 0.05142680784700119,
+      "counts": 23440620
+    },
+    {
+      "target": "CSK",
+      "max_abs_response_error": 0.0010785801927623501,
+      "L2_difference": 0.051550375814049185,
+      "counts": 23440620
+    },
+    {
+      "target": "CSNK1E",
+      "max_abs_response_error": 0.00106877236922977,
+      "L2_difference": 0.051048207718469796,
+      "counts": 23440620
+    },
+    {
+      "target": "CTBP2",
+      "max_abs_response_error": 0.0010803612489608744,
+      "L2_difference": 0.05030724089486377,
+      "counts": 23440620
+    },
+    {
+      "target": "CTNNB1",
+      "max_abs_response_error": 0.0010801020544045454,
+      "L2_difference": 0.05090309361219339,
+      "counts": 23440620
+    },
+    {
+      "target": "CTSV",
+      "max_abs_response_error": 0.0010750667411114974,
+      "L2_difference": 0.05125510355730961,
+      "counts": 23440620
+    },
+    {
+      "target": "CXCL12",
+      "max_abs_response_error": 0.0010655469395558185,
+      "L2_difference": 0.05127004065209308,
+      "counts": 23440620
+    },
+    {
+      "target": "CYCS",
+      "max_abs_response_error": 0.0010767430951905237,
+      "L2_difference": 0.05074719496915993,
+      "counts": 23440620
+    },
+    {
+      "target": "CYFIP1",
+      "max_abs_response_error": 0.0010780786573660257,
+      "L2_difference": 0.05033786091360456,
+      "counts": 23440620
+    },
+    {
+      "target": "DCK",
+      "max_abs_response_error": 0.0010698590776906198,
+      "L2_difference": 0.05144810667268209,
+      "counts": 23440620
+    },
+    {
+      "target": "DHX9",
+      "max_abs_response_error": 0.001071948144926158,
+      "L2_difference": 0.050483335920961464,
+      "counts": 23440620
+    },
+    {
+      "target": "DNAJA3",
+      "max_abs_response_error": 0.001067267084835497,
+      "L2_difference": 0.047811261966433045,
+      "counts": 23440620
+    },
+    {
+      "target": "DOT1L",
+      "max_abs_response_error": 0.0010770245021331296,
+      "L2_difference": 0.05137296241511174,
+      "counts": 23440620
+    },
+    {
+      "target": "DPF2",
+      "max_abs_response_error": 0.0010718212380261376,
+      "L2_difference": 0.05189031255339471,
+      "counts": 23440620
+    },
+    {
+      "target": "DPH2",
+      "max_abs_response_error": 0.0010646989735348625,
+      "L2_difference": 0.04985276021867859,
+      "counts": 23440620
+    },
+    {
+      "target": "EHMT1",
+      "max_abs_response_error": 0.0010746983638737979,
+      "L2_difference": 0.04871018054038497,
+      "counts": 23440620
+    },
+    {
+      "target": "EHMT2",
+      "max_abs_response_error": 0.0010789856300901575,
+      "L2_difference": 0.05009487308667568,
+      "counts": 23440620
+    },
+    {
+      "target": "EIF3H",
+      "max_abs_response_error": 0.001076187210322893,
+      "L2_difference": 0.05039027966454561,
+      "counts": 23440620
+    },
+    {
+      "target": "ELAC2",
+      "max_abs_response_error": 0.0010697433111163772,
+      "L2_difference": 0.050130282023049956,
+      "counts": 23440620
+    },
+    {
+      "target": "EP300",
+      "max_abs_response_error": 0.0010713399537604328,
+      "L2_difference": 0.04840090564139804,
+      "counts": 23440620
+    },
+    {
+      "target": "EPB41L2",
+      "max_abs_response_error": 0.0010724927303150025,
+      "L2_difference": 0.04950838714989665,
+      "counts": 23440620
+    },
+    {
+      "target": "EPHB4",
+      "max_abs_response_error": 0.001064781184532952,
+      "L2_difference": 0.04893578317965854,
+      "counts": 23440620
+    },
+    {
+      "target": "EPHX1",
+      "max_abs_response_error": 0.0010753603941621654,
+      "L2_difference": 0.05139801492689449,
+      "counts": 23440620
+    },
+    {
+      "target": "ETV4",
+      "max_abs_response_error": 0.0010642493630100517,
+      "L2_difference": 0.048911403220663875,
+      "counts": 23440620
+    },
+    {
+      "target": "FDPS",
+      "max_abs_response_error": 0.0010744771784003055,
+      "L2_difference": 0.047604068890118166,
+      "counts": 23440620
+    },
+    {
+      "target": "FGFR1",
+      "max_abs_response_error": 0.0010743690785885369,
+      "L2_difference": 0.05141095505278689,
+      "counts": 23440620
+    },
+    {
+      "target": "FIBP",
+      "max_abs_response_error": 0.0010644015541684743,
+      "L2_difference": 0.04899729165271965,
+      "counts": 23440620
+    },
+    {
+      "target": "FUBP1",
+      "max_abs_response_error": 0.0010781692676458462,
+      "L2_difference": 0.050628958963294134,
+      "counts": 23440620
+    },
+    {
+      "target": "GNG12",
+      "max_abs_response_error": 0.001071683812175748,
+      "L2_difference": 0.05142857314147589,
+      "counts": 23440620
+    },
+    {
+      "target": "GRB10",
+      "max_abs_response_error": 0.00108144304197693,
+      "L2_difference": 0.05127603448694835,
+      "counts": 23440620
+    },
+    {
+      "target": "GSTZ1",
+      "max_abs_response_error": 0.0010719757696404817,
+      "L2_difference": 0.05152907934932782,
+      "counts": 23440620
+    },
+    {
+      "target": "GULP1",
+      "max_abs_response_error": 0.0010657667235380655,
+      "L2_difference": 0.05129960282849388,
+      "counts": 23440620
+    },
+    {
+      "target": "HAX1",
+      "max_abs_response_error": 0.001071215476650726,
+      "L2_difference": 0.051373313783704654,
+      "counts": 23440620
+    },
+    {
+      "target": "HDAC3",
+      "max_abs_response_error": 0.001075625506395078,
+      "L2_difference": 0.04930232946363521,
+      "counts": 23440620
+    },
+    {
+      "target": "HDAC8",
+      "max_abs_response_error": 0.001068581913763261,
+      "L2_difference": 0.04951304341986782,
+      "counts": 23440620
+    },
+    {
+      "target": "HDGF",
+      "max_abs_response_error": 0.0010762677411571926,
+      "L2_difference": 0.05119073478478231,
+      "counts": 23440620
+    },
+    {
+      "target": "HMGCR",
+      "max_abs_response_error": 0.0010779639409646156,
+      "L2_difference": 0.05084121368993885,
+      "counts": 23440620
+    },
+    {
+      "target": "HMGCS1",
+      "max_abs_response_error": 0.0010673979717749566,
+      "L2_difference": 0.05024872319097495,
+      "counts": 23440620
+    },
+    {
+      "target": "HMGXB4",
+      "max_abs_response_error": 0.0010731421630110545,
+      "L2_difference": 0.051684218967099384,
+      "counts": 23440620
+    },
+    {
+      "target": "HSBP1",
+      "max_abs_response_error": 0.001064811251128543,
+      "L2_difference": 0.04831656347408514,
+      "counts": 23440620
+    },
+    {
+      "target": "HSP90B1",
+      "max_abs_response_error": 0.0010792217157292645,
+      "L2_difference": 0.050149684236040055,
+      "counts": 23440620
+    },
+    {
+      "target": "HTATSF1",
+      "max_abs_response_error": 0.001078650425048646,
+      "L2_difference": 0.04990462197410211,
+      "counts": 23440620
+    },
+    {
+      "target": "IGF1R",
+      "max_abs_response_error": 0.0010740510174285574,
+      "L2_difference": 0.05174918306123068,
+      "counts": 23440620
+    },
+    {
+      "target": "INO80B",
+      "max_abs_response_error": 0.0010772946975406213,
+      "L2_difference": 0.05010261530411774,
+      "counts": 23440620
+    },
+    {
+      "target": "ITGAV",
+      "max_abs_response_error": 0.001073676287370366,
+      "L2_difference": 0.051387747181009656,
+      "counts": 23440620
+    },
+    {
+      "target": "JAZF1",
+      "max_abs_response_error": 0.0010747624896679027,
+      "L2_difference": 0.050625641981160464,
+      "counts": 23440620
+    },
+    {
+      "target": "JMJD1C",
+      "max_abs_response_error": 0.0010650506769080343,
+      "L2_difference": 0.051108557190860535,
+      "counts": 23440620
+    },
+    {
+      "target": "JMJD8",
+      "max_abs_response_error": 0.0010712246280375822,
+      "L2_difference": 0.05135065909915252,
+      "counts": 23440620
+    },
+    {
+      "target": "KIF20A",
+      "max_abs_response_error": 0.0010746167903845011,
+      "L2_difference": 0.04969135837967221,
+      "counts": 23440620
+    },
+    {
+      "target": "KLHDC2",
+      "max_abs_response_error": 0.0010640320996854675,
+      "L2_difference": 0.04987742734853737,
+      "counts": 23440620
+    },
+    {
+      "target": "KRT18",
+      "max_abs_response_error": 0.0010709491971127028,
+      "L2_difference": 0.05124485256153327,
+      "counts": 23440620
+    },
+    {
+      "target": "LAP3",
+      "max_abs_response_error": 0.0010675319526112807,
+      "L2_difference": 0.05145044412351685,
+      "counts": 23440620
+    },
+    {
+      "target": "LBR",
+      "max_abs_response_error": 0.0010717571416660908,
+      "L2_difference": 0.051409728911463,
+      "counts": 23440620
+    },
+    {
+      "target": "LTBR",
+      "max_abs_response_error": 0.0010684533741791812,
+      "L2_difference": 0.050971842861474784,
+      "counts": 23440620
+    },
+    {
+      "target": "MAT2A",
+      "max_abs_response_error": 0.0010706474653874249,
+      "L2_difference": 0.050638170146611136,
+      "counts": 23440620
+    },
+    {
+      "target": "MAX",
+      "max_abs_response_error": 0.0010752061784058574,
+      "L2_difference": 0.04998366784344266,
+      "counts": 23440620
+    },
+    {
+      "target": "MED15",
+      "max_abs_response_error": 0.0010707854458049783,
+      "L2_difference": 0.05000543579965815,
+      "counts": 23440620
+    },
+    {
+      "target": "MED19",
+      "max_abs_response_error": 0.0010787187658793562,
+      "L2_difference": 0.04974191478796669,
+      "counts": 23440620
+    },
+    {
+      "target": "MED23",
+      "max_abs_response_error": 0.001065547322453088,
+      "L2_difference": 0.051269611987015865,
+      "counts": 23440620
+    },
+    {
+      "target": "MED25",
+      "max_abs_response_error": 0.0010642485366871219,
+      "L2_difference": 0.049605740778128314,
+      "counts": 23440620
+    },
+    {
+      "target": "MFSD10",
+      "max_abs_response_error": 0.001072690581229311,
+      "L2_difference": 0.05132261056366026,
+      "counts": 23440620
+    },
+    {
+      "target": "MGST1",
+      "max_abs_response_error": 0.0010668150663919085,
+      "L2_difference": 0.05129426265596485,
+      "counts": 23440620
+    },
+    {
+      "target": "MLLT1",
+      "max_abs_response_error": 0.0010860331962531595,
+      "L2_difference": 0.0493224745980872,
+      "counts": 23440620
+    },
+    {
+      "target": "MORN2",
+      "max_abs_response_error": 0.0010767358757346633,
+      "L2_difference": 0.05106357502637714,
+      "counts": 23440620
+    },
+    {
+      "target": "MPC2",
+      "max_abs_response_error": 0.0010699835256696528,
+      "L2_difference": 0.05144853929039205,
+      "counts": 23440620
+    },
+    {
+      "target": "MTFR1",
+      "max_abs_response_error": 0.001066107535737086,
+      "L2_difference": 0.051304094568292005,
+      "counts": 23440620
+    },
+    {
+      "target": "NCAPH2",
+      "max_abs_response_error": 0.0010697176330746,
+      "L2_difference": 0.05006446684816489,
+      "counts": 23440620
+    },
+    {
+      "target": "NCKAP1",
+      "max_abs_response_error": 0.0010771960655018451,
+      "L2_difference": 0.050137327228470904,
+      "counts": 23440620
+    },
+    {
+      "target": "NDUFB9",
+      "max_abs_response_error": 0.0010714282683819297,
+      "L2_difference": 0.05084815363454242,
+      "counts": 23440620
+    },
+    {
+      "target": "NDUFC2",
+      "max_abs_response_error": 0.001070532767443386,
+      "L2_difference": 0.05138282266797084,
+      "counts": 23440620
+    },
+    {
+      "target": "NEK2",
+      "max_abs_response_error": 0.0010696927504700408,
+      "L2_difference": 0.05151194350799268,
+      "counts": 23440620
+    },
+    {
+      "target": "NELFE",
+      "max_abs_response_error": 0.001070756086313701,
+      "L2_difference": 0.0497919827921105,
+      "counts": 23440620
+    },
+    {
+      "target": "NFATC3",
+      "max_abs_response_error": 0.0010737774131610754,
+      "L2_difference": 0.05035645442837158,
+      "counts": 23440620
+    },
+    {
+      "target": "NFE2L1",
+      "max_abs_response_error": 0.0010696059244468628,
+      "L2_difference": 0.04828735110368589,
+      "counts": 23440620
+    },
+    {
+      "target": "NFX1",
+      "max_abs_response_error": 0.0010725485330238703,
+      "L2_difference": 0.05132335036937953,
+      "counts": 23440620
+    },
+    {
+      "target": "NGRN",
+      "max_abs_response_error": 0.0010791436056818767,
+      "L2_difference": 0.051035572349134924,
+      "counts": 23440620
+    },
+    {
+      "target": "NSDHL",
+      "max_abs_response_error": 0.0010717168741271469,
+      "L2_difference": 0.05152176428334363,
+      "counts": 23440620
+    },
+    {
+      "target": "NUDT9",
+      "max_abs_response_error": 0.0010703365537550254,
+      "L2_difference": 0.0509955636929425,
+      "counts": 23440620
+    },
+    {
+      "target": "OAZ1",
+      "max_abs_response_error": 0.0010708695912524822,
+      "L2_difference": 0.051422732776265606,
+      "counts": 23440620
+    },
+    {
+      "target": "OSTC",
+      "max_abs_response_error": 0.0010698479349512886,
+      "L2_difference": 0.05008775384306963,
+      "counts": 23440620
+    },
+    {
+      "target": "OXA1L",
+      "max_abs_response_error": 0.0010660921378136123,
+      "L2_difference": 0.04957410807624783,
+      "counts": 23440620
+    },
+    {
+      "target": "PACSIN3",
+      "max_abs_response_error": 0.0010784433340806786,
+      "L2_difference": 0.04897584025490528,
+      "counts": 23440620
+    },
+    {
+      "target": "PAXIP1",
+      "max_abs_response_error": 0.001075696024133633,
+      "L2_difference": 0.05142872779811352,
+      "counts": 23440620
+    },
+    {
+      "target": "PBX3",
+      "max_abs_response_error": 0.0010712091747462514,
+      "L2_difference": 0.05112522618003365,
+      "counts": 23440620
+    },
+    {
+      "target": "PCCB",
+      "max_abs_response_error": 0.0010787172345656855,
+      "L2_difference": 0.051575906536541524,
+      "counts": 23440620
+    },
+    {
+      "target": "PGAM1",
+      "max_abs_response_error": 0.0010761509347005016,
+      "L2_difference": 0.050338241388486624,
+      "counts": 23440620
+    },
+    {
+      "target": "PHF12",
+      "max_abs_response_error": 0.0010740347206615692,
+      "L2_difference": 0.04994215392206987,
+      "counts": 23440620
+    },
+    {
+      "target": "PIAS1",
+      "max_abs_response_error": 0.0010714514880594138,
+      "L2_difference": 0.050309343612986314,
+      "counts": 23440620
+    },
+    {
+      "target": "PLAGL2",
+      "max_abs_response_error": 0.0010703736368271634,
+      "L2_difference": 0.04847957556122158,
+      "counts": 23440620
+    },
+    {
+      "target": "PPP2R3C",
+      "max_abs_response_error": 0.0010739354170139833,
+      "L2_difference": 0.05009975386266902,
+      "counts": 23440620
+    },
+    {
+      "target": "PSME1",
+      "max_abs_response_error": 0.0010740825943563095,
+      "L2_difference": 0.05004269207243789,
+      "counts": 23440620
+    },
+    {
+      "target": "PSMG1",
+      "max_abs_response_error": 0.0010714213720462882,
+      "L2_difference": 0.04994834239321268,
+      "counts": 23440620
+    },
+    {
+      "target": "RBPJ",
+      "max_abs_response_error": 0.0010760719608601914,
+      "L2_difference": 0.051375831279326975,
+      "counts": 23440620
+    },
+    {
+      "target": "RFX5",
+      "max_abs_response_error": 0.0010710976488679412,
+      "L2_difference": 0.05149663778636854,
+      "counts": 23440620
+    },
+    {
+      "target": "RNF20",
+      "max_abs_response_error": 0.0010653157109745846,
+      "L2_difference": 0.04910732895635445,
+      "counts": 23440620
+    },
+    {
+      "target": "RNF40",
+      "max_abs_response_error": 0.0010744319879473037,
+      "L2_difference": 0.05050121314198603,
+      "counts": 23440620
+    },
+    {
+      "target": "RRM2",
+      "max_abs_response_error": 0.0010740669677057153,
+      "L2_difference": 0.04984882717808695,
+      "counts": 23440620
+    },
+    {
+      "target": "SAFB2",
+      "max_abs_response_error": 0.0010713035576257808,
+      "L2_difference": 0.051394338005530706,
+      "counts": 23440620
+    },
+    {
+      "target": "SALL4",
+      "max_abs_response_error": 0.001072728703027822,
+      "L2_difference": 0.049270863010809615,
+      "counts": 23440620
+    },
+    {
+      "target": "SBDS",
+      "max_abs_response_error": 0.00107595900634564,
+      "L2_difference": 0.051035169169994614,
+      "counts": 23440620
+    },
+    {
+      "target": "SCCPDH",
+      "max_abs_response_error": 0.0010737471166089958,
+      "L2_difference": 0.051339304448825396,
+      "counts": 23440620
+    },
+    {
+      "target": "SDC1",
+      "max_abs_response_error": 0.00107282315676806,
+      "L2_difference": 0.04869511303077325,
+      "counts": 23440620
+    },
+    {
+      "target": "SET",
+      "max_abs_response_error": 0.0010823842307343843,
+      "L2_difference": 0.050965036088230525,
+      "counts": 23440620
+    },
+    {
+      "target": "SETDB1",
+      "max_abs_response_error": 0.0010761605794753833,
+      "L2_difference": 0.05014357064546693,
+      "counts": 23440620
+    },
+    {
+      "target": "SH3BP4",
+      "max_abs_response_error": 0.0010655479222648437,
+      "L2_difference": 0.051269918427313814,
+      "counts": 23440620
+    },
+    {
+      "target": "SHPRH",
+      "max_abs_response_error": 0.0010632277642064068,
+      "L2_difference": 0.04845027015747732,
+      "counts": 23440620
+    },
+    {
+      "target": "SLC39A6",
+      "max_abs_response_error": 0.001072860579114807,
+      "L2_difference": 0.04948205420132508,
+      "counts": 23440620
+    },
+    {
+      "target": "SLC5A6",
+      "max_abs_response_error": 0.0010847105981439049,
+      "L2_difference": 0.051316095212815424,
+      "counts": 23440620
+    },
+    {
+      "target": "SLIRP",
+      "max_abs_response_error": 0.0010706266564004395,
+      "L2_difference": 0.04825995516598291,
+      "counts": 23440620
+    },
+    {
+      "target": "SMARCB1",
+      "max_abs_response_error": 0.0010812673121903045,
+      "L2_difference": 0.050111267032401915,
+      "counts": 23440620
+    },
+    {
+      "target": "SMARCE1",
+      "max_abs_response_error": 0.0010696610837965968,
+      "L2_difference": 0.050073873911788386,
+      "counts": 23440620
+    },
+    {
+      "target": "SOX4",
+      "max_abs_response_error": 0.0010820908937626368,
+      "L2_difference": 0.051198998721568106,
+      "counts": 23440620
+    },
+    {
+      "target": "STRAP",
+      "max_abs_response_error": 0.0010748373746663096,
+      "L2_difference": 0.04979844013408398,
+      "counts": 23440620
+    },
+    {
+      "target": "STUB1",
+      "max_abs_response_error": 0.0010748167691543463,
+      "L2_difference": 0.051281530797737666,
+      "counts": 23440620
+    },
+    {
+      "target": "STXBP1",
+      "max_abs_response_error": 0.0010811077663698083,
+      "L2_difference": 0.05139212690897067,
+      "counts": 23440620
+    },
+    {
+      "target": "SUPT4H1",
+      "max_abs_response_error": 0.0010719531572363937,
+      "L2_difference": 0.05005130053292458,
+      "counts": 23440620
+    },
+    {
+      "target": "SUPV3L1",
+      "max_abs_response_error": 0.0010788909016183274,
+      "L2_difference": 0.05055739250365437,
+      "counts": 23440620
+    },
+    {
+      "target": "TAF11",
+      "max_abs_response_error": 0.0010764376026113597,
+      "L2_difference": 0.05014858592416262,
+      "counts": 23440620
+    },
+    {
+      "target": "TAF13",
+      "max_abs_response_error": 0.0010624771296359327,
+      "L2_difference": 0.04870766955680833,
+      "counts": 23440620
+    },
+    {
+      "target": "TCF7L2",
+      "max_abs_response_error": 0.0010758839484095338,
+      "L2_difference": 0.05135517099857787,
+      "counts": 23440620
+    },
+    {
+      "target": "THAP11",
+      "max_abs_response_error": 0.0010784477630421284,
+      "L2_difference": 0.05041035352175905,
+      "counts": 23440620
+    },
+    {
+      "target": "THY1",
+      "max_abs_response_error": 0.0010652355298871802,
+      "L2_difference": 0.05127484565730645,
+      "counts": 23440620
+    },
+    {
+      "target": "TNFRSF12A",
+      "max_abs_response_error": 0.0010752924476319853,
+      "L2_difference": 0.05143443587489483,
+      "counts": 23440620
+    },
+    {
+      "target": "TOR1A",
+      "max_abs_response_error": 0.0010729038462441926,
+      "L2_difference": 0.051154803052082906,
+      "counts": 23440620
+    },
+    {
+      "target": "TRAFD1",
+      "max_abs_response_error": 0.0010668475582986834,
+      "L2_difference": 0.05143653906819073,
+      "counts": 23440620
+    },
+    {
+      "target": "TSFM",
+      "max_abs_response_error": 0.0010858866532719035,
+      "L2_difference": 0.050330581439428215,
+      "counts": 23440620
+    },
+    {
+      "target": "TSKU",
+      "max_abs_response_error": 0.0010665474978043613,
+      "L2_difference": 0.04835058630521622,
+      "counts": 23440620
+    },
+    {
+      "target": "TUSC3",
+      "max_abs_response_error": 0.0010770364883568092,
+      "L2_difference": 0.051229312910762985,
+      "counts": 23440620
+    },
+    {
+      "target": "UGDH",
+      "max_abs_response_error": 0.0010748627916532996,
+      "L2_difference": 0.051180210855181145,
+      "counts": 23440620
+    },
+    {
+      "target": "UGP2",
+      "max_abs_response_error": 0.001074857135324548,
+      "L2_difference": 0.05159712209292527,
+      "counts": 23440620
+    },
+    {
+      "target": "UQCRB",
+      "max_abs_response_error": 0.0010753649389583571,
+      "L2_difference": 0.05086909893068206,
+      "counts": 23440620
+    },
+    {
+      "target": "USF2",
+      "max_abs_response_error": 0.001079589768780846,
+      "L2_difference": 0.0499907296358302,
+      "counts": 23440620
+    },
+    {
+      "target": "VCL",
+      "max_abs_response_error": 0.0010721369123705003,
+      "L2_difference": 0.05147936216856992,
+      "counts": 23440620
+    },
+    {
+      "target": "WAC",
+      "max_abs_response_error": 0.0010772790525575247,
+      "L2_difference": 0.05009144021692417,
+      "counts": 23440620
+    },
+    {
+      "target": "ZBTB39",
+      "max_abs_response_error": 0.0010807629145473006,
+      "L2_difference": 0.05097640970996146,
+      "counts": 23440620
+    },
+    {
+      "target": "ZFP62",
+      "max_abs_response_error": 0.001071563804077725,
+      "L2_difference": 0.049751793280536506,
+      "counts": 23440620
+    },
+    {
+      "target": "ZNF107",
+      "max_abs_response_error": 0.0010747093405653536,
+      "L2_difference": 0.05154329643663693,
+      "counts": 23440620
+    },
+    {
+      "target": "ZNF32",
+      "max_abs_response_error": 0.001069548480233918,
+      "L2_difference": 0.04830500631610093,
+      "counts": 23440620
+    },
+    {
+      "target": "ZNF581",
+      "max_abs_response_error": 0.0010725523447830184,
+      "L2_difference": 0.051350099832229046,
+      "counts": 23440620
+    },
+    {
+      "target": "ZNF598",
+      "max_abs_response_error": 0.0010698324062387505,
+      "L2_difference": 0.051634419843056854,
+      "counts": 23440620
+    },
+    {
+      "target": "ZNF664",
+      "max_abs_response_error": 0.0010783409540991709,
+      "L2_difference": 0.05129141732383954,
+      "counts": 23440620
+    },
+    {
+      "target": "ZNF850",
+      "max_abs_response_error": 0.0010652260971278733,
+      "L2_difference": 0.04883038071099623,
+      "counts": 23440620
+    },
+    {
+      "target": "ZNF92",
+      "max_abs_response_error": 0.001068772800311027,
+      "L2_difference": 0.05135025161022699,
+      "counts": 23440620
+    },
+    {
+      "target": "ZRSR2",
+      "max_abs_response_error": 0.0010840679455339673,
+      "L2_difference": 0.050251010602948856,
+      "counts": 23440620
+    }
+  ],
+  "control_rows": 3200,
+  "reference_treated_rows_read": 0,
+  "group_cells": 400,
+  "group_depth_total": 23440620,
+  "source_pins": {
+    "h2h2_1026/inputs/vendor_runtime/model.py": "b3a7ac6d0ce1ada591badc6cc2e7854c14c5c4b713bf2bddf7d3b7231c63acf9",
+    "h2h2_1026/inputs/vendor_runtime/vendor/atlas_model.py": "8ad68112dbfa9c5c8c8b21a717dbe475fe23613f84c25e844fbfbf8bb47cff3b"
+  },
+  "method": "Exact frozen mean_counts + integer column repair; v9 layout provably preserves these same column totals. No count matrices retained.",
+  "nice": 20
+}

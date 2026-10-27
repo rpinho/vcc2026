@@ -92,7 +92,7 @@ git diff --cached --check
 
 The offline checker checks syntax, personal home paths, emails, credential
 literals, private keys, binary/unexpected file types, symlinks and runtime/data
-directories. It now also rejects files larger than 20 MB. The staged-file sizes
+directories. It now also rejects files larger than 5 MB. The staged-file sizes
 and Git tree are checked separately. SOURCE_MANIFEST.sha256 is refreshed for
 source files only, excluding this audit and the manifest itself. No large input,
 weight or package is checksummed as part of this publication job.
@@ -122,3 +122,59 @@ whitespace, and synthetic aggregation/layout-bound checks. No full historical
 campaign, private dataset, package build or challenge submission is run. The
 selected source release is explicitly partial; its absent inputs must be
 regenerated rather than bypassing provenance checks.
+
+## October 26 afternoon/evening refresh
+
+This job curates existing calibration, sign, decoupled-amplitude, R9, MSE
+instrumentation and biology studies, plus AI advisor briefs/answers and the
+dated competitor-ideas document. It adds a retrospective, a second research
+update and an unpublished thread draft. Exact scope and normalization are in
+[EXPORT_20261026b.md](EXPORT_20261026b.md). The prior rules review above is
+historical; no fresh rules clearance or new official score is claimed.
+
+Before copying, free disk was 34.11 GiB, above the required 30.5 GiB. Local
+commands use nice 10. No datasets, model/prediction arrays, fitted coefficient
+arrays, raw competitor payloads, process listings, logs or error files are
+published. Explicitly curated CSV/JSON diagnostics are below 1 MB each and
+enumerated in tools/published_result_files.txt; all files are capped at 5 MB.
+No real credentials, other people's private messages or personal knowledge
+files were used as publication inputs. Workbench paths were normalized.
+
+The new source is a partial historical release. Hashes in old result receipts
+refer to original private-run inputs/sources; they do not certify edited export
+files. Historical numerical PASS results are described as such. This job does
+not rerun data-dependent fits, rendering, official scoring or challenge packaging.
+All public Python sources are parsed with the reference Python 3.12 environment.
+An initial system-Python 3.9 syntax finding was a version mismatch; the existing
+source was retained without modification.
+
+Final local verification is recorded below after the tree is frozen. The owner
+also receives an external review inventory. No files are staged or committed;
+no push, remote creation, submission or posting occurs.
+
+### Final verification for this refresh
+
+| Check | Result |
+|---|---|
+| Offline export/privacy checker, Python 3.12 | PASS: 716 files, 540 Python sources, zero findings |
+| Gitleaks directory scan, redacted | PASS: zero leaks; repeated with inherited configuration removed and allow comments ignored |
+| Synthetic export-checker policy probes | PASS: 17 cases, including size caps, explicit result list, paths, credentials, datasets, logs and symlinks |
+| Curated JSON/CSV structure and Git visibility | PASS: 59 enumerated results, including 16 rectangular CSVs; no export file hidden by ignore rules |
+| Relative Markdown file links in added/changed documents | PASS |
+| Retrospective length | 1,976 whitespace-delimited words |
+| Thread length | 9 posts; longest literal post 249 characters, including numbering and URL |
+| Manifest | Regenerated with the original sorted SHA-256 procedure; 714 entries, independently checked for complete coverage and matching hashes |
+| Whitespace and index | PASS: diff whitespace check; no staged changes |
+
+The requested broad text scans find zero personal home-path prefixes, personal
+mail-domain matches or forbidden provider names. Broad key terms and the short
+credential-prefix fragment occur only in ordinary code/prose: dictionary/cache
+keys, CLI mask options, disk/task/risk hyphenations and the checker/ignore rules.
+Credential-shaped contexts were inspected; none contains a credential or private
+key path. These benign text matches are not secret findings and no secret was
+allowlisted. All true path/privacy findings in the initial copied material were
+removed or normalized before the passing scans.
+
+These are source publication checks, not new numerical campaign results or a
+reproduction of official validation. The source workbench was read only; no
+data/model artifacts were opened for testing. Final review is left to the owner.

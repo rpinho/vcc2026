@@ -1,0 +1,12 @@
+{
+  "words": 417,
+  "max_words": 450,
+  "point_PDS_pass": [
+    "B0_knn_PDS_CI",
+    "B0_map_PDS_CI"
+  ],
+  "CI_PDS_pass": [
+    "B0_map_PDS_CI"
+  ],
+  "one_arm_worth_rendering": "B0_map_PDS_CI"
+}

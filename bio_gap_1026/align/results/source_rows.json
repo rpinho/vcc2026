@@ -1,0 +1,62 @@
+[
+  {
+    "bank": "CD4_Rest",
+    "family": "CD4",
+    "matching_rows": 36
+  },
+  {
+    "bank": "CD4_Stim48hr",
+    "family": "CD4",
+    "matching_rows": 34
+  },
+  {
+    "bank": "CD4_Stim8hr",
+    "family": "CD4",
+    "matching_rows": 36
+  },
+  {
+    "bank": "HCT116",
+    "family": "HCT116",
+    "matching_rows": 40
+  },
+  {
+    "bank": "HEK293T",
+    "family": "HEK293T",
+    "matching_rows": 41
+  },
+  {
+    "bank": "HepG2",
+    "family": "HepG2",
+    "matching_rows": 43
+  },
+  {
+    "bank": "Jurkat",
+    "family": "Jurkat",
+    "matching_rows": 58
+  },
+  {
+    "bank": "K562",
+    "family": "K562",
+    "matching_rows": 42
+  },
+  {
+    "bank": "K562_GWPS_bulk_missing",
+    "family": "K562",
+    "matching_rows": 0
+  },
+  {
+    "bank": "K562_GWPS_full",
+    "family": "K562",
+    "matching_rows": 79
+  },
+  {
+    "bank": "K562_GWPS_raw",
+    "family": "K562",
+    "matching_rows": 39
+  },
+  {
+    "bank": "RPE1",
+    "family": "RPE1",
+    "matching_rows": 56
+  }
+]

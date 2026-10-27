@@ -1,0 +1,93 @@
+{
+  "status": "PASS",
+  "all_input_hashes_unchanged": true,
+  "outer_folds_replayed": 168,
+  "unique_inner_pairs_replayed": 14028,
+  "direct_gene_space_beta_spots": [
+    [
+      0
+    ],
+    [
+      55
+    ],
+    [
+      167
+    ],
+    [
+      0,
+      55
+    ],
+    [
+      55,
+      167
+    ],
+    [
+      0,
+      167
+    ]
+  ],
+  "max_beta_abs_error": 4.996003610813204e-16,
+  "max_family_weight_abs_error": 1.4349632593280148e-14,
+  "max_summary_abs_error": 1.865174681370263e-14,
+  "native_PDS": {
+    "vector__B0": 0.8558953521528372,
+    "vector__a_mean": 0.47586968919304257,
+    "vector__b_mean_plus_B0": 0.5229540918163673,
+    "vector__c_mean_plus_orthogonal": 0.5211362988309096,
+    "vector__d_family_correction": 0.8595309381237525,
+    "vector__e_c_plus_family": 0.5196749358426006,
+    "projected__B0": 0.8558953521528372,
+    "projected__a_mean": 0.4752994011976049,
+    "projected__b_mean_plus_B0": 0.5225620188195039,
+    "projected__c_mean_plus_orthogonal": 0.5212075848303395,
+    "projected__d_family_correction": 0.8597447961220416,
+    "projected__e_c_plus_family": 0.5200313658397491
+  },
+  "bootstrap_replicates_replayed": 2000,
+  "all_primary_SSE_exact_rational": true,
+  "exact_orthogonal_energy_spots": [
+    {
+      "target": "AASS",
+      "orthogonal_energy_nonnegative_exact": true
+    },
+    {
+      "target": "GULP1",
+      "orthogonal_energy_nonnegative_exact": true
+    },
+    {
+      "target": "ZRSR2",
+      "orthogonal_energy_nonnegative_exact": true
+    }
+  ],
+  "extra": {
+    "nested_scaled_orthogonal_E": 0.9880033144693309,
+    "projection_fraction_per_target_quantiles": [
+      8.188405848021135e-07,
+      0.005203344271799484,
+      0.03760982410039964,
+      0.10626974436049556,
+      0.38461238219760574
+    ],
+    "truth_shared_cosine_quantiles": [
+      -0.2125698514478137,
+      0.051262274324139094,
+      0.18838170942842494,
+      0.32598833336997257,
+      0.620171252314718
+    ],
+    "shared_mean_improvement_vs_zero": 0.044397327151808996
+  },
+  "nice": 20,
+  "blas": [
+    {
+      "user_api": "openmp",
+      "internal_api": "openmp",
+      "num_threads": 1,
+      "prefix": "libomp",
+      "filepath": ".venv/lib/python3.12/site-packages/sklearn/.dylibs/libomp.dylib",
+      "version": null
+    }
+  ],
+  "free_gib": 32.093772888183594,
+  "seconds": 33.541329290979775
+}

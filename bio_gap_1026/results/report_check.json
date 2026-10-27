@@ -1,0 +1,8 @@
+{
+  "words_whitespace": 599,
+  "maximum": 600,
+  "verification": "PASS",
+  "exact_n_conf_complete": false,
+  "unresolved": "Exact n_conf and H1-specific essentiality unavailable; official MSE pending instrumentation",
+  "baseline_integer_emitted": true
+}

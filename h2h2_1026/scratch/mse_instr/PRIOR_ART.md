@@ -1,0 +1,11 @@
+# Prior art — vcc_mse_instr_1026
+
+Scope: diagnostic reproduction of the installed scorer, not a new predictor or record claim. All writes confined here. No downloads, submissions, packaging, promotion, or source-job edits.
+
+Read first: `_codex/RULES.md`, `calib3_1026/{REPORT.md,calib3.py,contrasts.json}`, `OFFICIAL_SCORES.md`, and `competitors/IDEAS-2026-10-26.md`, especially ideas 6–7.
+
+The existing same-day public-source sweep covers the live board and public code, lab/result repositories, papers, and community: `competitors/raw/ideas_1026/{metric_receipts.md,teams/teams_receipts.md,lit/lit_receipts.md}`. Its 18:43Z board check reported no score changes against 13:09Z; hidden final-phase scores are unavailable. The snapshot public leader is Illumina AI's iCell, overall 0.472034 (rounded MSE .793); code/weights unavailable, so its predictor cannot be reproduced. Xaira X-99 is .3527, likewise not an available method. Strong competitors' methods are mostly undisclosed. The incumbent best own official entry is billmA, 0.16438; it is not the public best. This job does not seek or claim a leaderboard improvement. The reproducible baseline here is the installed official metric applied to already retained analog moments and scores.
+
+Primary methodological baseline: ArcInstitute/cell-eval2 v0.18.0, installed locally. Public source: https://github.com/ArcInstitute/cell-eval2 ; metric reference: https://github.com/ArcInstitute/cell-eval2/blob/main/docs/vcc2026_metrics/vcc2026-metrics-brief.md . Rechecked the brief online on 2026-10-26. Public search for VCC2026/cell-eval2/pseudobulk MSE found no replacement instrument addressing these exact contrasts. Existing local `mse_1025/REPORT.md` already diagnoses prediction correction, per-gene jackknife, ratio-of-sums normalization, and finite-sample control effects. Reuse those mechanics and retained moments rather than infer a new score formula from official outcomes.
+
+Calib3 explicitly says its v8a surrogate uses v9 layout and C6 has no local analog. Missing evidence must remain missing; no manufactured C6 or fitted official-contrast parameters. All variants will be specified from scorer mechanics before reading their contrast outcomes. The 79-target panel is diagnostic only; no parameter fitting on it.

@@ -1,0 +1,114 @@
+[
+  {
+    "outer": "H1",
+    "arm": "pooled",
+    "resumed_inner_selection": true,
+    "selection_file": "bio_gap_1026/loco_map/results/H1_selection.csv",
+    "choice_file": "bio_gap_1026/loco_map/results/H1_choices.json"
+  },
+  {
+    "outer": "H1",
+    "arm": "control",
+    "resumed_inner_selection": true,
+    "selection_file": "bio_gap_1026/loco_map/results/H1_selection.csv",
+    "choice_file": "bio_gap_1026/loco_map/results/H1_choices.json"
+  },
+  {
+    "outer": "H1",
+    "arm": "pooled",
+    "validation": null,
+    "training": [
+      {
+        "recipient": "K562",
+        "rows": 6864,
+        "source_exclusions": [
+          "H1",
+          "K562"
+        ],
+        "covered": 1429
+      },
+      {
+        "recipient": "RPE1",
+        "rows": 1996,
+        "source_exclusions": [
+          "H1",
+          "RPE1"
+        ],
+        "covered": 1993
+      },
+      {
+        "recipient": "HepG2",
+        "rows": 1803,
+        "source_exclusions": [
+          "H1",
+          "HepG2"
+        ],
+        "covered": 1803
+      },
+      {
+        "recipient": "Jurkat",
+        "rows": 2116,
+        "source_exclusions": [
+          "H1",
+          "Jurkat"
+        ],
+        "covered": 2110
+      }
+    ],
+    "retained_input_energy": 0.5980379581451416,
+    "verification": {
+      "gram_max_error": 2.220446049250313e-16,
+      "normal_equation_relative": 1.0388992373342993e-15,
+      "independent_cholesky_SVD_RRR_relative": 6.457405261312671e-14
+    }
+  },
+  {
+    "outer": "H1",
+    "arm": "control",
+    "validation": null,
+    "training": [
+      {
+        "recipient": "K562",
+        "rows": 6864,
+        "source_exclusions": [
+          "H1",
+          "K562"
+        ],
+        "covered": 1429
+      },
+      {
+        "recipient": "RPE1",
+        "rows": 1996,
+        "source_exclusions": [
+          "H1",
+          "RPE1"
+        ],
+        "covered": 1993
+      },
+      {
+        "recipient": "HepG2",
+        "rows": 1803,
+        "source_exclusions": [
+          "H1",
+          "HepG2"
+        ],
+        "covered": 1803
+      },
+      {
+        "recipient": "Jurkat",
+        "rows": 2116,
+        "source_exclusions": [
+          "H1",
+          "Jurkat"
+        ],
+        "covered": 2110
+      }
+    ],
+    "retained_input_energy": 0.6190259456634521,
+    "verification": {
+      "gram_max_error": 3.608224830031759e-16,
+      "normal_equation_relative": 1.063179318941935e-15,
+      "independent_cholesky_SVD_RRR_relative": 6.737322395922875e-14
+    }
+  }
+]

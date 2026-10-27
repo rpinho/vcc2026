@@ -1,0 +1,155 @@
+{
+  "PASS": true,
+  "pinned_inputs": 15,
+  "selectors": [
+    {
+      "outer": "H1",
+      "arm": "pooled",
+      "kind": "map",
+      "h": 8,
+      "weight": 1.0
+    },
+    {
+      "outer": "H1",
+      "arm": "pooled",
+      "kind": "bounded",
+      "h": 0,
+      "weight": 0.05
+    },
+    {
+      "outer": "H1",
+      "arm": "control",
+      "kind": "map",
+      "h": 8,
+      "weight": 1.0
+    },
+    {
+      "outer": "H1",
+      "arm": "control",
+      "kind": "bounded",
+      "h": 0,
+      "weight": 0.05
+    },
+    {
+      "outer": "K562",
+      "arm": "pooled",
+      "kind": "map",
+      "h": 8,
+      "weight": 1.0
+    },
+    {
+      "outer": "K562",
+      "arm": "pooled",
+      "kind": "bounded",
+      "h": 4,
+      "weight": 0.05
+    },
+    {
+      "outer": "K562",
+      "arm": "control",
+      "kind": "map",
+      "h": 2,
+      "weight": 1.0
+    },
+    {
+      "outer": "K562",
+      "arm": "control",
+      "kind": "bounded",
+      "h": 7,
+      "weight": 0.03
+    },
+    {
+      "outer": "RPE1",
+      "arm": "pooled",
+      "kind": "map",
+      "h": 1,
+      "weight": 1.0
+    },
+    {
+      "outer": "RPE1",
+      "arm": "pooled",
+      "kind": "bounded",
+      "h": 1,
+      "weight": 0.05
+    },
+    {
+      "outer": "RPE1",
+      "arm": "control",
+      "kind": "map",
+      "h": 1,
+      "weight": 1.0
+    },
+    {
+      "outer": "RPE1",
+      "arm": "control",
+      "kind": "bounded",
+      "h": 1,
+      "weight": 0.05
+    },
+    {
+      "outer": "HepG2",
+      "arm": "pooled",
+      "kind": "map",
+      "h": 2,
+      "weight": 1.0
+    },
+    {
+      "outer": "HepG2",
+      "arm": "pooled",
+      "kind": "bounded",
+      "h": 2,
+      "weight": 0.05
+    },
+    {
+      "outer": "HepG2",
+      "arm": "control",
+      "kind": "map",
+      "h": 2,
+      "weight": 1.0
+    },
+    {
+      "outer": "HepG2",
+      "arm": "control",
+      "kind": "bounded",
+      "h": 2,
+      "weight": 0.05
+    },
+    {
+      "outer": "Jurkat",
+      "arm": "pooled",
+      "kind": "map",
+      "h": 5,
+      "weight": 1.0
+    },
+    {
+      "outer": "Jurkat",
+      "arm": "pooled",
+      "kind": "bounded",
+      "h": 7,
+      "weight": 0.02
+    },
+    {
+      "outer": "Jurkat",
+      "arm": "control",
+      "kind": "map",
+      "h": 5,
+      "weight": 1.0
+    },
+    {
+      "outer": "Jurkat",
+      "arm": "control",
+      "kind": "bounded",
+      "h": 7,
+      "weight": 0.02
+    }
+  ],
+  "source_exclusions": true,
+  "completed_recipients": [
+    "H1",
+    "K562",
+    "RPE1",
+    "HepG2",
+    "Jurkat"
+  ],
+  "limitation": "H1 inner-fit numerical checks inherited from the completed initial run; selected choices independently replayed from its saved full grid."
+}

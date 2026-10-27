@@ -50,3 +50,17 @@ Public-code heads rechecked read-only at 2026-10-18T14:55:22.994999+00:00:
 - https://github.com/danielchen26/vcc2026-stage1-lab: 3a5ea5e9f640a6dd652516fd1492711618829870
 
 Released AtlasShift numerical fixture was reproduced successfully in a synthetic disposable copy during publication preparation. No new model or record claim is made. The exhaustive research sweep was not repeated because this task exports existing code rather than searching for a new method.
+
+## October 26 afternoon/evening publication snapshot
+
+This job curates existing experiments; it runs no new research, downloads no
+inputs, and makes no new performance or current-record claim. Before editing
+code we read this inherited public-method review, OFFICIAL_SCORES.md, the
+publication audit and the source's calib3/sign-audit/R9/MSE reports. The source's
+competitors/IDEAS-2026-10-26.md supplies the dated public-code review for this
+snapshot. Its observations are historical, not a fresh live leaderboard census.
+Our reproduced reference remains the existing billmA recipe, official validation
+0.16438. Sidechain and AtlasShift attribution and prior reproduction limits
+above remain applicable. No full official score is reproduced by this export.
+The broad literature/community and AI-lab sweeps are inherited, not rerun for a
+source-only retrospective with no downloads or new method construction.

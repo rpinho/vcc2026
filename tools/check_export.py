@@ -15,8 +15,13 @@ patterns = {
     'credential literal': re.compile(r'''(?i)\b(?:api[_-]?key|client[_-]?secret|access[_-]?token|password|passwd|vcc[_-]?token)\b\s*[:=]\s*["']([^"'\n]{8,})["']'''),
 }
 
+published_results = set((ROOT / 'tools/published_result_files.txt').read_text().splitlines())
+
 def main():
     findings=[];count=0;python_count=0;size=0
+    for rel in sorted(published_results):
+        if not (ROOT / rel).is_file():
+            findings.append((rel, 'curated result missing'))
     for p in sorted(ROOT.rglob('*')):
         rel=p.relative_to(ROOT)
         if '.git' in rel.parts:continue
@@ -28,13 +33,21 @@ def main():
             continue
         if not p.is_file():continue
         count+=1;size+=p.stat().st_size
-        if p.stat().st_size > 20_000_000:
-            findings.append((str(rel),'file exceeds 20 MB'))
-        if p.suffix not in allowed_suffixes and p.name not in {'.gitignore','LICENSE','ATLAS_LICENSE','SIDECHAIN_LICENSE','CELL_EVAL2_LICENSE'}:
+        if p.stat().st_size > 5_000_000:
+            findings.append((str(rel),'file exceeds 5 MB'))
+        if p.suffix not in allowed_suffixes and str(rel) not in published_results and p.name not in {'.gitignore','LICENSE','ATLAS_LICENSE','SIDECHAIN_LICENSE','CELL_EVAL2_LICENSE'}:
             findings.append((str(rel),'unexpected file type'))
         try:text=p.read_text()
         except UnicodeDecodeError:
             findings.append((str(rel),'binary file'));continue
+        if str(rel) in published_results:
+            if p.suffix not in {'.json', '.csv'} or p.stat().st_size >= 1_000_000:
+                findings.append((str(rel), 'invalid curated result type/size'))
+            if p.suffix == '.json':
+                import json
+                try:json.loads(text)
+                except ValueError:findings.append((str(rel), 'invalid JSON'))
+        if p.name == 'completion_ps.txt':findings.append((str(rel), 'process listing'))
         if p.suffix=='.py':
             python_count+=1
             try:ast.parse(text,filename=str(rel))

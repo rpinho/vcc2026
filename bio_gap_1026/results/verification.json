@@ -1,0 +1,63 @@
+{
+  "status": "PASS",
+  "independent_per_target_max_abs_errors": {
+    "sse": 2.842170943040401e-14,
+    "truth_norm2": 7.44648787076585e-12,
+    "pred_norm2": 2.842170943040401e-14,
+    "best_scalar": 9.8879238130678e-17,
+    "cosine": 5.329070518200751e-15,
+    "relative_error": 6.821210263296962e-13,
+    "direction_error": 2.9976021664879227e-15,
+    "magnitude_error": 6.608047442568932e-13
+  },
+  "exact_rational_spots": [
+    {
+      "target": "AASS",
+      "exact_decomposition_identity": true,
+      "exact_SSE_numerator": "873533038195698043276148331461",
+      "exact_SSE_denominator": "79228162514264337593543950336"
+    },
+    {
+      "target": "GULP1",
+      "exact_decomposition_identity": true,
+      "exact_SSE_numerator": "1936532389047566335661234823",
+      "exact_SSE_denominator": "19342813113834066795298816"
+    },
+    {
+      "target": "ZRSR2",
+      "exact_decomposition_identity": true,
+      "exact_SSE_numerator": "4506410680205669981798326188929",
+      "exact_SSE_denominator": "19807040628566084398385987584"
+    }
+  ],
+  "LOO_replays": [
+    "global_scale",
+    "essential_scale",
+    "source_KD_scale"
+  ],
+  "official_PDS_function": {
+    "B0": 0.8558953521528372,
+    "global_scale": 0.8564299971485599,
+    "essential_scale": 0.8565012831479897,
+    "source_KD_scale": 0.8564299971485599
+  },
+  "PDS_space": "Measured 18077-gene pseudobulk with all 168 panel targets excluded, native installed discrimination comparator. B0 is integer-emitted; proposed fixes use continuous projection. Not a full six-metric evaluation.",
+  "baseline_integer_emitted": true,
+  "continuous_SSE": 18980.39695431946,
+  "emitted_SSE": 18980.92370952906,
+  "emitter_relative_SSE_change": 2.7752591838053823e-05,
+  "baseline_centered_energy": 9432.095444840425,
+  "centered_energy_ratios": {
+    "global_scale": 0.017441882530111454,
+    "essential_scale": 0.02337717387518017,
+    "source_KD_scale": 0.01817988427527244
+  },
+  "limitations": [
+    "Exact full-training Wilcoxon n_conf unavailable, all n_conf_exact are missing; proxy strata explicitly named.",
+    "Essentiality annotation is essential-screen membership only.",
+    "New-source metadata checks certify overlap, not response quality.",
+    "Bootstrap CIs are exploratory and condition on reused H1 labels/fits."
+  ],
+  "all_floats_finite": true,
+  "free_gib": 32.1149787902832
+}

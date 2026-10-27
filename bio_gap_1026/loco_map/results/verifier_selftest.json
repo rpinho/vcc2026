@@ -1,0 +1,9 @@
+{
+  "PASS": true,
+  "test": "Exact float32 dyadic dot, norm and centered B versus independent Fraction",
+  "nontrivial_rank80": {
+    "gram_max_error": 3.353761712787673e-12,
+    "normal_equation_relative": 7.117104246225877e-16,
+    "independent_cholesky_SVD_RRR_relative": 3.329953788418378e-14
+  }
+}

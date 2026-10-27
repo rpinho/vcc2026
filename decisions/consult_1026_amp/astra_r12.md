@@ -1,0 +1,9 @@
+**Close the biology line for this entry. B0 final; no new arm before 11-03.**
+
+1. **The arithmetic is conditionally correct; the score forecast is unsupported.** Using your conversions and implied 1/6 weights gives +0.00073 overall MSE contribution, −0.00022 to −0.00048 PDS contribution, and net **+0.00025 to +0.00051**. However, cross is normalized by truth energy: \(2ΔC\) is not automatically a raw-MSE improvement. Matching centered spread also leaves changes in the prediction mean’s energy; budget cancellation does not eliminate that term. Official weighting, normalization, and credit behavior remain unvalidated. Thus +0.0004 is a scenario, not an estimated gain or upper bound.
+
+2. **`control_bounded` establishes a small transferable diagnostic improvement, insufficient to justify production work.** Its five-context result deserves preservation, but the full-axis H1 PDS interval breaches −0.005, and target bootstraps do not measure uncertainty across unseen contexts. No qualified MSE instrument connects its cross improvement to an official gain exceeding the seed floor.
+
+3. **These diagnostics do not exhaust biology.** Better donors for already-covered targets and control-conditioned pathway/state interactions remain hypotheses. The ≤0.5% ceiling applies only to fixing missing rows—not improving existing rows with new contexts. Nevertheless, these reports establish no additional lever with a credible seven-day path through implementation and validation. Large gains were *demonstrated using* in-context truth; they were not proven to *require* it.
+
+Retain those hypotheses for post-challenge research. Keep frozen **B0 = billmA, validation 0.16438**. Nothing is submitted without Ricardo.

@@ -105,3 +105,40 @@ improvement that loses the six-component composite. The fitted STRING/manifold
 candidates failed the registered adoption rule on a disjoint-target H1 test.
 The final safety entry remains the incumbent; local diagnostics do not supply
 a new official score or an accepted replacement.
+
+## Afternoon/evening evidence and revised priorities
+
+The [full retrospective](RETROSPECTIVE.md) covers every recorded submission and
+the corrections to our reasoning. The [second October 26 update](RESEARCH_UPDATE_20261026b.md)
+adds N1, P1a, seed/amplitude maps, call-budget/ordering screens, failed MSE
+instrumentation and the training168 biology studies. Their results refine the
+open questions above:
+
+- **Calibration comes before another sweep.** [Component calibration](calib3_1026/REPORT.md)
+  found 9–12× inflated local fidelity deltas and 7–9× Jaccard deltas. The
+  [MSE study](h2h2_1026/scratch/mse_instr/REPORT.md) found no instrument that
+  passed the historical amplitude contrast. A faithful v8 layout replay on a
+  representative panel would resolve more than another amplitude candidate.
+- **Coverage is not the main measured error source.** [Already-covered targets](bio_gap_1026/REPORT.md)
+  carry 99.5% of error on training168; B0 mean cosine is 0.084. Filling missing
+  rows alone buys at most 0.5% there. Better donors for existing rows remain
+  a distinct, unmeasured opportunity; those two questions should not be conflated.
+- **Distance gains need energy accounting.** Shared means and scalar shrinkage
+  lower SSE while destroying spread or retrieval. [Matched-spread alignment](bio_gap_1026/align/REPORT.md)
+  and [recipient holdouts](bio_gap_1026/loco_map/REPORT.md) distinguish aligned
+  signal from shrinkage. A bounded transferable blend adds only +0.0027 cross
+  on H1, with a PDS interval missing stricter noninferiority. This is a small
+  diagnostic result, not an official score forecast.
+- **The tested call-side fixes are closed for this entry.** A top-20 reach head
+  was inert; trimming to 250 and detectability selection lost locally and failed
+  validity checks. [R9 results](h2h2_1026/results/r9_gate.md) and the
+  [sign audit](signaudit_1026/REPORT.md) retain the failed hypotheses. D1770's
+  large local gain remains indeterminate after calibration, not an established
+  official loss or an accepted replacement.
+
+Useful outside work would bring a faithful ranking instrument, demonstrably
+better donor transfer, or an independent recipient-context comparison with all
+six metrics. Repeating the closed parameterizations is not a new experiment.
+The [advisor record](decisions/consult_1026_amp/DECISION.md) explains why the
+incumbent remains frozen; the [export note](EXPORT_20261026b.md) states what can
+and cannot be reproduced from these data-free sources.

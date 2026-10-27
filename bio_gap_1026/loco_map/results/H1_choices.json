@@ -1,0 +1,62 @@
+{
+  "pooled": {
+    "map": {
+      "h": 8,
+      "lambda_relative": 10.0,
+      "rank": 0,
+      "weight": 1.0,
+      "training_macro_cross": 0.18509711541343343,
+      "training_recipients": [
+        "HepG2",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.16700540223183016
+    },
+    "bounded": {
+      "h": 0,
+      "lambda_relative": 0.1,
+      "rank": 20,
+      "weight": 0.05,
+      "training_macro_cross": 0.16937868087897917,
+      "training_recipients": [
+        "HepG2",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.004576713293197931
+    }
+  },
+  "control": {
+    "map": {
+      "h": 8,
+      "lambda_relative": 10.0,
+      "rank": 0,
+      "weight": 1.0,
+      "training_macro_cross": 0.18753917939356807,
+      "training_recipients": [
+        "HepG2",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.17009050102099332
+    },
+    "bounded": {
+      "h": 0,
+      "lambda_relative": 0.1,
+      "rank": 20,
+      "weight": 0.05,
+      "training_macro_cross": 0.16936517050214944,
+      "training_recipients": [
+        "HepG2",
+        "Jurkat",
+        "K562",
+        "RPE1"
+      ],
+      "minimum_training_PDS_bound": -0.004287316145827227
+    }
+  }
+}

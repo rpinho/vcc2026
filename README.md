@@ -11,9 +11,13 @@ when recorded. We are well behind the leading entries and would welcome help.
 Start with [lessons and concrete open questions](LESSONS_AND_HELP_WANTED.md)
 and the [builder and reproduction guide](REPRODUCING.md). Issues and PRs welcome.
 
-Latest: [October 26 research update](RESEARCH_UPDATE_20261026.md) adds local
-H1 diagnostics, negative candidate comparisons and selected analysis source.
-There is no new official validation score.
+Start with the [full retrospective](RETROSPECTIVE.md): the official submission
+arc, failed local improvements, harness calibration and biology diagnostics.
+The latest [October 26 afternoon/evening update](RESEARCH_UPDATE_20261026b.md)
+follows the [morning update](RESEARCH_UPDATE_20261026.md), with results and links
+for direction, magnitude, rendering and context-transfer tests. There is no new
+official validation score. A [thread draft](TWEET_THREAD_DRAFT.md) is available
+for the owner to edit; this publication job posts nothing.
 
 `model_v4/` contains AtlasShift-anchor transfer and dual-summary experiments;
 `model_v5/` adds spread calibration, cross-source DE gating and control-axis removal;
@@ -29,6 +33,17 @@ The refresh also includes `model_billm/` training and inference,
 `model_v9/` emission experiments, and `final_push/` final builders and
 official-scorer ablations. See [REPRODUCING.md](REPRODUCING.md) for the source map,
 required local inputs and historical reproduction limits.
+
+The October 26 additions include `calib3_1026/` (local/official component
+calibration), `signaudit_1026/`, `dm_1026/`, R9 call-side experiments in
+`h2h2_1026/`, MSE instrumentation in `h2h2_1026/scratch/mse_instr/`, and
+`bio_gap_1026/` with shared-response, alignment and leave-one-context-out studies.
+The [AI advisor decision history](decisions/consult_1026_amp/DECISION.md)
+preserves corrections and rejected proposals. See [export scope](EXPORT_20261026b.md)
+for the selected result tables and deliberately omitted inputs. Historical
+“official” scorer runs in these directories are local experiments with SEARCH
+anchors, not submitted validation scores. The scripts are a partial research
+release, not a complete clean-checkout reproduction of these campaigns.
 
 ## Official validation scores
 

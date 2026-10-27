@@ -1,0 +1,445 @@
+{
+  "summary": {
+    "B0": {
+      "cross": 0.11544693265848911,
+      "aligned_per_spread": 0.1235432806006905,
+      "prediction_energy": 0.8732257582904106,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.0,
+      "final_match_scale": 1.0,
+      "PDS": 0.8558953521528372,
+      "delta_cross": 0.0,
+      "delta_PDS": 0.0,
+      "cross_CI95": [
+        0.09369227584668975,
+        0.13553002127745753
+      ],
+      "PDS_CI95": [
+        0.817287745936698,
+        0.8923634873110922
+      ],
+      "delta_cross_CI95": [
+        0.0,
+        0.0
+      ],
+      "delta_PDS_CI95": [
+        0.0,
+        0.0
+      ],
+      "centered_cross": 0.10543548641014237,
+      "SSE": 1.6423318929734323,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    },
+    "knn": {
+      "cross": 0.423048753811235,
+      "aligned_per_spread": 0.3193189733687901,
+      "prediction_energy": 1.755219323644869,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.010397731520951,
+      "final_match_scale": 0.9948413284237072,
+      "PDS": 0.5782007413743941,
+      "delta_cross": 0.3076018211527459,
+      "delta_PDS": -0.2776946107784431,
+      "cross_CI95": [
+        0.3602646600726894,
+        0.48795923662709656
+      ],
+      "PDS_CI95": [
+        0.5306093170801255,
+        0.6254286070715711
+      ],
+      "delta_cross_CI95": [
+        0.24240113949897993,
+        0.3738418607334212
+      ],
+      "delta_PDS_CI95": [
+        -0.3287380595950954,
+        -0.22925220986598221
+      ],
+      "centered_cross": 0.19886035774422658,
+      "SSE": 1.9091218160223988,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    },
+    "map": {
+      "cross": 0.3984188057986654,
+      "aligned_per_spread": 0.3951141261226444,
+      "prediction_energy": 1.0167976764055922,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.0569825279889205,
+      "final_match_scale": 0.972671286939315,
+      "PDS": 0.6619083262047334,
+      "delta_cross": 0.2829718731401763,
+      "delta_PDS": -0.19398702594810377,
+      "cross_CI95": [
+        0.3204340928989952,
+        0.47330028179649936
+      ],
+      "PDS_CI95": [
+        0.618296888366125,
+        0.7046634409751924
+      ],
+      "delta_cross_CI95": [
+        0.20517188458822377,
+        0.3556536846494278
+      ],
+      "delta_PDS_CI95": [
+        -0.24198567151411457,
+        -0.14722251924722
+      ],
+      "centered_cross": 0.2949190112166061,
+      "SSE": 1.2199600648082616,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    },
+    "B0_knn": {
+      "cross": 0.42861848211721065,
+      "aligned_per_spread": 0.33303053387986015,
+      "prediction_energy": 1.6564322627480754,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.0097890776235887,
+      "final_match_scale": 0.9951411053022546,
+      "PDS": 0.6055389221556886,
+      "delta_cross": 0.31317154945872155,
+      "delta_PDS": -0.2503564299971486,
+      "cross_CI95": [
+        0.3703140148361561,
+        0.48928500303900163
+      ],
+      "PDS_CI95": [
+        0.5596610350727117,
+        0.6522374893071
+      ],
+      "delta_cross_CI95": [
+        0.25422312372900346,
+        0.37399079087538745
+      ],
+      "delta_PDS_CI95": [
+        -0.297485386370117,
+        -0.20351439977188476
+      ],
+      "centered_cross": 0.21730808775249555,
+      "SSE": 1.7991952985136541,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    },
+    "B0_map": {
+      "cross": 0.40347383081733074,
+      "aligned_per_spread": 0.40282194840150914,
+      "prediction_energy": 1.0032391972957428,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.0523112862231836,
+      "final_match_scale": 0.9748277551271533,
+      "PDS": 0.6833475905332193,
+      "delta_cross": 0.28802689815884164,
+      "delta_PDS": -0.1725477616196179,
+      "cross_CI95": [
+        0.33069437567462245,
+        0.474588500501976
+      ],
+      "PDS_CI95": [
+        0.6360822996863416,
+        0.7280136156258911
+      ],
+      "delta_cross_CI95": [
+        0.21645140981618222,
+        0.35610051539862253
+      ],
+      "delta_PDS_CI95": [
+        -0.21464303535785575,
+        -0.13283700456230416
+      ],
+      "centered_cross": 0.30480612576097194,
+      "SSE": 1.1962915356610817,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    },
+    "B0_knn_PDS": {
+      "cross": 0.12431290499640713,
+      "aligned_per_spread": 0.13294056889841666,
+      "prediction_energy": 0.8744145284374376,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 0.9999720197060937,
+      "final_match_scale": 1.0000139904405463,
+      "PDS": 0.8502994011976048,
+      "delta_cross": 0.008865972337918013,
+      "delta_PDS": -0.005595950955232389,
+      "cross_CI95": [
+        0.10241042444184896,
+        0.14417767536536547
+      ],
+      "PDS_CI95": [
+        0.8122326775021387,
+        0.8877994011976047
+      ],
+      "delta_cross_CI95": [
+        0.006366369102023589,
+        0.011564582126589595
+      ],
+      "delta_PDS_CI95": [
+        -0.012760193897918382,
+        0.0019247219846021458
+      ],
+      "centered_cross": 0.11105542342339815,
+      "SSE": 1.6257887184446234,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    },
+    "B0_map_PDS": {
+      "cross": 0.13559691303468735,
+      "aligned_per_spread": 0.14496318500540253,
+      "prediction_energy": 0.8749518634783727,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.0005816593996903,
+      "final_match_scale": 0.9997092971115602,
+      "PDS": 0.8502994011976048,
+      "delta_cross": 0.020149980376198237,
+      "delta_PDS": -0.005595950955232391,
+      "cross_CI95": [
+        0.11196514303914216,
+        0.15747561574515462
+      ],
+      "PDS_CI95": [
+        0.8115135799828915,
+        0.8883705802680352
+      ],
+      "delta_cross_CI95": [
+        0.014074336046852251,
+        0.02648553789920875
+      ],
+      "delta_PDS_CI95": [
+        -0.015575990875392076,
+        0.0033513330481894235
+      ],
+      "centered_cross": 0.12024951972864352,
+      "SSE": 1.603758037408998,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    },
+    "B0_knn_PDS_CI": {
+      "cross": 0.11862999579730947,
+      "aligned_per_spread": 0.12691827524369453,
+      "prediction_energy": 0.8736564886934646,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.0000163317448936,
+      "final_match_scale": 0.999991834227574,
+      "PDS": 0.8538637011690905,
+      "delta_cross": 0.003183063138820358,
+      "delta_PDS": -0.002031650983746795,
+      "cross_CI95": [
+        0.09690711005458727,
+        0.13865037743057576
+      ],
+      "PDS_CI95": [
+        0.8157845024237239,
+        0.8903995580268035
+      ],
+      "delta_cross_CI95": [
+        0.002376894425489021,
+        0.004064061594461874
+      ],
+      "delta_PDS_CI95": [
+        -0.006060201026518353,
+        0.0016048260621612498
+      ],
+      "centered_cross": 0.10737722300789476,
+      "SSE": 1.6363964970988456,
+      "qualifies_point_PDS": true,
+      "qualifies_CI_PDS": false
+    },
+    "B0_map_PDS_CI": {
+      "cross": 0.12348654101995013,
+      "aligned_per_spread": 0.13210238208131247,
+      "prediction_energy": 0.8738118977258075,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 1.0001355490689314,
+      "final_match_scale": 0.9999322323548374,
+      "PDS": 0.8556102081551183,
+      "delta_cross": 0.008039608361461018,
+      "delta_PDS": -0.0002851439977188509,
+      "cross_CI95": [
+        0.10123113664922946,
+        0.14372964631228852
+      ],
+      "PDS_CI95": [
+        0.8177831836327346,
+        0.8921451739378385
+      ],
+      "delta_cross_CI95": [
+        0.005663371452141283,
+        0.010494932596931267
+      ],
+      "delta_PDS_CI95": [
+        -0.004847447961220388,
+        0.0043493370402053096
+      ],
+      "centered_cross": 0.1113832731652971,
+      "SSE": 1.626838815685907,
+      "qualifies_point_PDS": true,
+      "qualifies_CI_PDS": true
+    },
+    "gene_variance": {
+      "cross": 0.09555523238945704,
+      "aligned_per_spread": 0.10044082074551464,
+      "prediction_energy": 0.9050830680051621,
+      "B": 0.8161157699008109,
+      "B_relative_B0": 1.0,
+      "raw_B_relative_B0": 0.9648017835700083,
+      "final_match_scale": 1.018077761938881,
+      "PDS": 0.7499643570002851,
+      "delta_cross": -0.019891700269032073,
+      "delta_PDS": -0.10593099515255205,
+      "cross_CI95": [
+        0.08015365873641181,
+        0.11022867953782448
+      ],
+      "PDS_CI95": [
+        0.7051949672084403,
+        0.7936270316509838
+      ],
+      "delta_cross_CI95": [
+        -0.031925131434785106,
+        -0.006983523201313873
+      ],
+      "delta_PDS_CI95": [
+        -0.1370847590533219,
+        -0.07869885229540922
+      ],
+      "centered_cross": 0.08429665348219914,
+      "SSE": 1.7139726032262481,
+      "qualifies_point_PDS": false,
+      "qualifies_CI_PDS": false
+    }
+  },
+  "training_rows": 168,
+  "grids": {
+    "k": [
+      3,
+      5,
+      10,
+      20
+    ],
+    "rank": [
+      5,
+      10,
+      20,
+      40,
+      80,
+      0
+    ],
+    "lambda_relative": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0
+    ],
+    "blend_weight": [
+      0.0,
+      0.05,
+      0.1,
+      0.2,
+      0.35,
+      0.5,
+      0.75,
+      1.0
+    ]
+  },
+  "pins": {
+    "bio_gap_1026/results/baseline.npz": "d79c2c2ede967efb925628c8540e4ccf23adc3fd0b757190719b5d0d20a69fe9",
+    "bio_gap_1026/shared_resp/results/sufficient.npz": "8528a01895502c3fd37b2484e3ce417a0e0ea02cf7b97393fcfadc725f66fdb5",
+    "model_billmB/data/manifest.json": "b2da7b84814170cb7a426c53d7b6c58473dd9b9d0ea756b8463994827a608ce5",
+    "model_billmB/data/CD4_Rest.npz": "9ce12ceeb0032bc180db5421c7a7a2438c78953a5d978076e31df46a59284e58",
+    "model_billmB/data/CD4_Stim48hr.npz": "7947be9e133f3e7432511c02751c571309a895ffc21808cd8688e19d6e1f31c5",
+    "model_billmB/data/CD4_Stim8hr.npz": "1073a23847b65d4ce27d1c6fad5f7d8a6d368d1e15ab952f8a5609c7da0752d0",
+    "model_billmB/data/HCT116.npz": "f68ef84b6b17ccf7f7a54498471f149080330ccf3392683b08fbe20963079465",
+    "model_billmB/data/HEK293T.npz": "86d3aea4dabfd3623e09d8429ff69f66ca40af07297a3ec3eef9ceaee5eccd8e",
+    "model_billmB/data/HepG2.npz": "d54289b8a758de9348d8c3c909bdb9b65aa58b35b1cafec0acd4d877109ff5eb",
+    "model_billmB/data/Jurkat.npz": "c55418b71f55aec78889902901836c7e0bc80f435907fdfd56808c975a78b8f3",
+    "model_billmB/data/K562.npz": "b3108b3fa7fb4331e01f2b00962d9f88f19677b85c909c66efaa7ac2c30a115c",
+    "model_billmB/data/K562_GWPS_bulk_missing.npz": "12b164404a46eff8bef48f73d30aeadcd36b7fedd977c306d9195c8f46f2151d",
+    "model_billmB/data/K562_GWPS_full.npz": "a1d25af049d0082d95013bce81cbc208693b9d7a891cad2d9962b1e48801efd9",
+    "model_billmB/data/K562_GWPS_raw.npz": "6b6ad0434f527a3c5e41e7e7afea6be439da3f7a7d991a3e8deda589b1c607a3",
+    "model_billmB/data/RPE1.npz": "8d6c05a02fa0210f431fb4b6a011c52eb3c43c8f5c54f36a1c3414091b1e9904"
+  },
+  "seconds": 263.0280511669989,
+  "free_gib": 31.843292236328125,
+  "requested_nice": 10,
+  "effective_nice": 20,
+  "blas": [],
+  "heldout79_accessed": false,
+  "rendering": false,
+  "official_MSE": "not measurable locally",
+  "bootstrap": {
+    "replicates": 2000,
+    "seed": 20261026,
+    "unit": "paired targets",
+    "method": "percentile; fixed fitted LOO predictions and retrieval panel; recompute B matching within each resample"
+  },
+  "normalization": "Cross C=dot/T; Q=prediction_energy/T; aligned_per_spread=C/sqrt(Q); B=centered_energy/T. Entire deltas multiplied by sqrt(B0/B). Final normalization descriptive; no labels used to choose scale.",
+  "selection": "Maximize inner OOF cross at matched centered B; jointly tune component hyperparameters and blend weight. Each fit excludes outer t and inner validation j. Inner OOF spread also fixes component/final blend scales.",
+  "constrained_blends": {
+    "arms": [
+      "B0_knn_PDS",
+      "B0_map_PDS"
+    ],
+    "weights": [
+      0.0,
+      0.005,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.075,
+      0.1,
+      0.15,
+      0.2,
+      0.35,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "inner_PDS_constraint": -0.005,
+    "inner_candidate_panel": "167 outer training targets, never outer t",
+    "motivation": "Original unconstrained cross-optimal blends fail PDS; bounded same-family follow-up. Additional arms exploratory.",
+    "seconds": 261.31414758300525
+  },
+  "conservative_blends": {
+    "arms": [
+      "B0_knn_PDS_CI",
+      "B0_map_PDS_CI"
+    ],
+    "weights": [
+      0.0,
+      0.005,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.075,
+      0.1,
+      0.15,
+      0.2,
+      0.35,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "inner_PDS_constraint": -0.005,
+    "inner_candidate_panel": "167 outer training targets, never outer t",
+    "constraint": "lower normal 95% confidence bound",
+    "motivation": "Earlier blends fail final PDS; bounded same-family follow-up. Additional arms exploratory.",
+    "seconds": 263.0398395000084
+  },
+  "original_analysis_seconds": 261.3066435410001
+}

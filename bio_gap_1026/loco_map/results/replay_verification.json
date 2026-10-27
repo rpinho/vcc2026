@@ -1,0 +1,217 @@
+{
+  "PASS": true,
+  "arms": [
+    {
+      "recipient": "H1",
+      "arm": "plain",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "B0_common",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "B0_original",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "pooled_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "pooled_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "B0_pooled_bounded_common",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "B0_pooled_bounded_original",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "control_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "control_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "B0_control_bounded_common",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "H1",
+      "arm": "B0_control_bounded_original",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "HepG2",
+      "arm": "plain",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "HepG2",
+      "arm": "pooled_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "HepG2",
+      "arm": "pooled_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "HepG2",
+      "arm": "control_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "HepG2",
+      "arm": "control_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "HepG2",
+      "arm": "H1_direct",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "Jurkat",
+      "arm": "plain",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "Jurkat",
+      "arm": "pooled_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "Jurkat",
+      "arm": "pooled_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "Jurkat",
+      "arm": "control_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "Jurkat",
+      "arm": "control_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "Jurkat",
+      "arm": "H1_direct",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "K562",
+      "arm": "plain",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "K562",
+      "arm": "pooled_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "K562",
+      "arm": "pooled_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "K562",
+      "arm": "control_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "K562",
+      "arm": "control_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "K562",
+      "arm": "H1_direct",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "RPE1",
+      "arm": "plain",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "RPE1",
+      "arm": "pooled_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "RPE1",
+      "arm": "pooled_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "RPE1",
+      "arm": "control_map",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "RPE1",
+      "arm": "control_bounded",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    },
+    {
+      "recipient": "RPE1",
+      "arm": "H1_direct",
+      "exact_totals": true,
+      "bootstrap_replayed": 2000
+    }
+  ],
+  "certificate_domain": "frozen float32 predictions",
+  "coverage": "Exact dot/energy/B certified at evaluation; 70-digit matched cross and all 2000 saved-stat bootstrap replicates independently replayed"
+}

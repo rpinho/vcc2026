@@ -1,0 +1,100 @@
+{
+  "status": "PASS",
+  "all_input_hashes_unchanged": true,
+  "source_kernel_independently_rebuilt": true,
+  "outer_folds_replayed": 168,
+  "outer_coefficient_max_errors": {
+    "knn": 5.551115123125783e-17,
+    "map": 4.824092514343903e-14,
+    "B0_knn": 5.551115123125783e-17,
+    "B0_map": 4.442713558150402e-14,
+    "B0_knn_PDS": 3.469446951953614e-18,
+    "B0_map_PDS": 5.9613772251942976e-15,
+    "B0_knn_PDS_CI": 1.734723475976807e-18,
+    "B0_map_PDS_CI": 1.1516395476141028e-15
+  },
+  "full_nested_outer_folds_replayed": [
+    0,
+    55,
+    167
+  ],
+  "selected_inner_fits_replayed": 15030,
+  "nested_objective_max_error": 5.051514762044462e-15,
+  "all_stored_candidate_optima_checked": true,
+  "outer_label_poisoning_tests": [
+    0,
+    55,
+    167
+  ],
+  "all_primary_full_coordinate_moments_exact_rational": true,
+  "native_PDS": {
+    "B0": 0.8558953521528372,
+    "knn": 0.5782007413743941,
+    "map": 0.6619083262047334,
+    "B0_knn": 0.6055389221556886,
+    "B0_map": 0.6833475905332193,
+    "B0_knn_PDS": 0.8502994011976048,
+    "B0_map_PDS": 0.8502994011976048,
+    "B0_knn_PDS_CI": 0.8538637011690905,
+    "B0_map_PDS_CI": 0.8556102081551183,
+    "gene_variance": 0.7499643570002851
+  },
+  "max_summary_error": 1.1657341758564144e-14,
+  "bootstrap_max_error": 4.052314039881821e-15,
+  "bootstrap_replicates_replayed": 2000,
+  "fixed_normalization_delta_cross_CI95": {
+    "B0": [
+      0.0,
+      0.0
+    ],
+    "knn": [
+      0.2314374337597284,
+      0.389430434180368
+    ],
+    "map": [
+      0.1653282522544796,
+      0.40804627839309254
+    ],
+    "B0_knn": [
+      0.24325404110669183,
+      0.38852365342336725
+    ],
+    "B0_map": [
+      0.17936714234304701,
+      0.4036643122304076
+    ],
+    "B0_knn_PDS": [
+      0.006320429184980121,
+      0.01161621251896065
+    ],
+    "B0_map_PDS": [
+      0.0138620644985134,
+      0.026813792803880722
+    ],
+    "B0_knn_PDS_CI": [
+      0.0023614918252936727,
+      0.004076091107722291
+    ],
+    "B0_map_PDS_CI": [
+      0.005597683269943222,
+      0.010572552011050722
+    ],
+    "gene_variance": [
+      -0.03193659344085038,
+      -0.0070553117964119215
+    ]
+  },
+  "seconds": 58.97409875001176,
+  "free_gib": 31.841655731201172,
+  "blas": [
+    {
+      "user_api": "openmp",
+      "internal_api": "openmp",
+      "num_threads": 1,
+      "prefix": "libomp",
+      "filepath": ".venv/lib/python3.12/site-packages/sklearn/.dylibs/libomp.dylib",
+      "version": null
+    }
+  ],
+  "effective_nice": 20
+}
