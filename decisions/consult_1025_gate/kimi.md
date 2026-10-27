@@ -1,9 +1,0 @@
-VERDICT: The donor-confidence gate and scalar budget are the only binding constraints; replacing the gate with frozen-MLP output and learning a per-target budget from the 8 public families directly captures the 0.61–0.70 leak-free headroom.
-
-EXPERIMENT: Calibrate a per-target budget predictor on the public families, then render each held-out target using only the frozen MLP for eligibility, direction, and ranking.
-
-PROTOCOL: (1) On the 8 public families compute per-target n̂ = #{g : |z_MLP| > 1} and read true n_conf; fit α = median_t(n_conf / n̂). (2) On the held-out panel compute n̂(t) from the frozen MLP; set budget B(t) = max(1, round(α·n̂(t))). (3) Eligibility: drop donor-confidence and donor-direction constraints entirely; keep all genes in the baseline keep set, predicted direction = sign(z_MLP). (4) Rank eligible genes by |z_MLP|, emit top B(t). (5) Run official scorer.
-
-KILL TEST: Abort if leave-one-public-family-out Spearman ρ(n_conf, n̂) < 0.35, if >5% of held-out targets receive B(t) < 10, or if final fidelity_yield_raw ≤ 0.50 (failing to recover the majority of the measured +0.432 headroom).
-
-The donor gate demands cross-cell-line donor agreement that almost never occurs, zeroing 42% of targets. Replacing it with the frozen MLP’s continuous output removes this hard bottleneck without touching the held-out reference. The scalar budget ~940 miscalibrates targets whose true n_conf ranges 1–3218; by regressing n_conf against the MLP’s own lenient call count n̂ on the eight public families, we obtain a per-target budget that tracks the hidden reference size leak-free. Together these changes directly convert the measured 0.6111 headroom (gate removed, scalar budget) into a moving budget that should approach the 0.6985 oracle, lifting fidelity_yield_raw by >0.40.

@@ -181,11 +181,7 @@ These limitations matter as much as the negative result.
 
 ## Advisors helped most when evidence corrected them
 
-The [chronological decisions index](DECISIONS_INDEX.md) covers all retained advisor rounds and their votes.
-
-Fable, Opus, Astra and Kimi participated across the campaign; the afternoon
-[rounds 5–12 and decision history](decisions/consult_1026_amp/DECISION.md) preserve
-the later record. Kimi participated in earlier consultations, not this series.
+Fable, Opus, Astra and Kimi participated across the campaign; the [decisions index](DECISIONS_INDEX.md) lists the main rulings.
 The useful process was explicit proposals, fixed tests and written corrections.
 Model agreement itself was not validation.
 

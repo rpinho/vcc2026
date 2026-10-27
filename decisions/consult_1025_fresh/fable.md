@@ -1,7 +1,0 @@
-VERDICT: No. Not worth 11 days. The frozen final entry cannot be replaced, so nothing learned on jbduran/vcc-2026-bench can alter our hidden score. The benchmark is not D/E/F data, yields no official number, and would only tell us how we'd rank on cell lines we already train on—a proxy for a proxy, exactly the kind of signal our own harness already fails to deliver. The untried levers (reliability weighting, STRING/sequence fusion, priors for row-less targets) are real, but every one of them is now a post-mortem note, not an action. Spending the remaining days building infrastructure that cannot change the outcome is sunk-cost behaviour dressed as diligence.
-
-NEXT ACTION: Write a one-page close-out: record the 0.16438 best validation, the frozen-entry hash and timestamp, the three untried levers with your expected effect sizes, and the Oct 25 benchmark as a candidate evaluation tool for any future round. Then stand down the pipeline.
-
-FORBIDDEN: Any attempt to resubmit, replace, or "clarify" the frozen entry; downloading the 3 GB benchmark on a box that must retain 30 GiB; any training run; treating a jbduran bench score as evidence about our official standing; reopening the audit as live work.
-
-SUCCESS TEST: By day 11 the close-out document exists, the frozen entry is byte-identical to what was published, disk free remains ≥30 GiB, and zero new training artifacts have been produced.

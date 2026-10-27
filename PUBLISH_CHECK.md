@@ -179,66 +179,8 @@ These are source publication checks, not new numerical campaign results or a
 reproduction of official validation. The source workbench was read only; no
 data/model artifacts were opened for testing. Final review is left to the owner.
 
-## October 26 earlier decision-record export (1026c)
+## October 27 trim
 
-Ricardo authorized publication of the earlier decision record. This refresh adds
-68 dated rulings, the retained Markdown briefs/final advisor answers from the
-earlier consultation directories, seven historical planning/review documents,
-and public-source competitor digests/audits. The already-public amplitude
-consultation and competitor-ideas document are unchanged. There were no
-small top-level decision JSON summaries in the inspected source.
-
-[DECISIONS_INDEX.md](DECISIONS_INDEX.md) supplies 102 chronological entries,
-including all twelve amplitude rounds, with questions, rulings, individual
-advisor positions and links. Pending, empty, refused and truncated answers are
-distinguished from completed votes. Earlier errors remain visible beside their
-corrections. The freeze memo's October 26 correction is preserved verbatim:
-“0 for 7” was not seven local wins contradicted by official scores. The
-retrospective changes only by the requested one-line index pointer.
-
-All seven requested top-level consultation folders concern VCC. The storage
-consultation retains its artifact-provenance and deferred-decode reasoning;
-transient capacity readings are omitted. Machine launch labels, process IDs,
-session paths, member rosters and speculative identity matches are removed.
-Storage-guard details explaining why a scientific run was VOID are retained.
-Public team names, public handles and public leaderboard descriptions remain.
-No private-message, bookmark or email content is published. Separate model
-reasoning transcripts and empty answers are excluded. Supplemental evidence
-briefs and consultation DECISION documents are retained as part of the ruling
-record. References to unavailable scientific artifacts are literal source
-references, rather than broken hyperlinks.
-
-The tree adds 211 Markdown files and changes README, the retrospective, this
-audit and the source manifest. No new scripts, text/log/output files, JSON,
-datasets, model arrays, raw competitor payloads or large artifacts are added.
-The historical source/scripts already published remain in place. Before copying,
-free disk was 34.12 GiB, above the required 30.5 GiB. Local preparation/checks use
-nice 10; the source workbench is read only. No network/download, data-dependent
-campaign, package build, official submission, staging, commit or push occurs.
-
-### Verification for 1026c
-
-| Check | Result |
-|---|---|
-| Offline export/privacy checker, project Python 3.12 | PASS: 927 files, 540 Python sources, zero findings |
-| Gitleaks, inherited configuration removed, allow comments ignored | PASS: no leaks |
-| Relative Markdown links and local heading fragments in added/changed documents | PASS; unavailable source artifacts rendered as explicit non-link references; external URLs not fetched |
-| Index coverage | PASS: all 68 dated rulings, 19 decision consultation folders, seven top-level consultation folders and all twelve amplitude rounds |
-| Freeze memo correction and retrospective scope | PASS: correction text unchanged; retrospective equals its original plus the requested link sentence |
-| Source integrity | PASS: all 567 scoped source-file fingerprints unchanged |
-| Git visibility and file boundary | PASS: all 211 additions are visible Markdown files; no prohibited new extension, symlink or >5 MB file |
-| Source manifest | Regenerated with the existing sorted SHA-256 algorithm; 925 entries, independently verified for coverage and hashes |
-| Whitespace/index | PASS: no whitespace errors or staged changes |
-
-The broad scans find zero personal absolute-home prefixes, personal mail-domain
-matches, forbidden provider names or private wellbeing terms.
-The short credential-prefix fragment matches ordinary mask/task/risk wording
-and public model names, not credentials. Three benign transfer-word matches remain: an unchanged earlier export-scope
-note, the original renderer’s filename in a dated verification ruling, and a
-public GitHub document path in the competitor code-search index. None references
-a personal transfer directory or its content. No secret finding is allowlisted.
-
-These checks establish the curated source/privacy boundary, not the correctness
-of every historical advisor premise or a new numerical performance result.
-The complete added/changed inventory, per-source exclusions and normalization
-record are supplied in the external owner review.
+The bulk decision record and competitor digests added on October 26 (commit c609890) were removed from `main`
+to keep the repository to measured results and code; they remain in Git history. DECISIONS_INDEX.md now lists
+the main rulings in one short table.

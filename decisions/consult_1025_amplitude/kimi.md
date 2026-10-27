@@ -1,6 +1,0 @@
-VERDICT: YES
-EXPERIMENT: Replace the incumbent’s final rescaling-to-pooled-norm with a learnable global scalar (initialized to ~0.3) multiplying the pooled response, keeping the MLP blend.
-PROTOCOL: Retrain the full architecture; evaluate official validation score (baseline 0.16438) and DE metrics (PDS cosine, direction fidelity).
-KILL TEST: Terminate if official score improvement is <0.01 absolute or if any DE metric drops >5% relative to the incumbent.
-
-The diagnostic shows a fixed scalar shrinkage captures 70% of the oracle amplitude gain (−12.4% vs −17.6%) and wins on 7/8 families. The incumbent’s forced rescaling locks in the wrong norm (|pred|/|true|=0.7), likely masking the MLP’s directional correction. Replacing it with the calibrated scalar directly fixes the largest systematic error with minimal architectural risk. The scalar’s stability across folds (0.25–0.36) supports generalization. This is the highest-value next step because it yields a double-digit expression MSE reduction without new data or complex changes; if DE metrics degrade due to reduced magnitude, the kill test triggers immediately.

@@ -1,6 +1,0 @@
- VERDICT: B
-EXPERIMENT: Recipient control-PC basis validation vs shared-response baseline
-PROTOCOL: Fit bilinear donor→target map on training families using recipient control PCs × donor response PCs; project held-out family through its own legally available control-PC basis
-KILL TEST: Abort if control-to-response subspace alignment <0.25 cosine or direction_fidelity gain ≤0 versus Option A shared basis
-
-The leakage rule irrecoverably blocks line-specific response bases for the held-out family (n=0 treated rows). Option B resolves this by using legally available unperturbed control PCs as the recipient-specific basis. This preserves strict outer exclusion while maintaining biological specificity: control states capture cell-intrinsic context that governs perturbation direction—critical since per-gene direction is the disease and the official metric is direction_fidelity-dominated. A shared basis (Option A) would erase recipient heterogeneity, which is fatal given the low 0.013-0.218 cross-family cosine similarity. The bilinear formulation respects CPU-only constraints, the 8-fold structure, and the prohibition on amplitude/pooling changes, directly targeting the direction fidelity deficit that killed cheaper mechanisms.

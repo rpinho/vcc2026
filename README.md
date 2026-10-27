@@ -16,8 +16,7 @@ arc, failed local improvements, harness calibration and biology diagnostics.
 The latest [October 26 afternoon/evening update](RESEARCH_UPDATE_20261026b.md)
 follows the [morning update](RESEARCH_UPDATE_20261026.md), with results and links
 for direction, magnitude, rendering and context-transfer tests. There is no new
-official validation score. A [thread draft](TWEET_THREAD_DRAFT.md) is available
-for the owner to edit; this publication job posts nothing.
+official validation score.
 
 `model_v4/` contains AtlasShift-anchor transfer and dual-summary experiments;
 `model_v5/` adds spread calibration, cross-source DE gating and control-axis removal;
@@ -38,10 +37,8 @@ The October 26 additions include `calib3_1026/` (local/official component
 calibration), `signaudit_1026/`, `dm_1026/`, R9 call-side experiments in
 `h2h2_1026/`, MSE instrumentation in `h2h2_1026/scratch/mse_instr/`, and
 `bio_gap_1026/` with shared-response, alignment and leave-one-context-out studies.
-See [the chronological decisions index](DECISIONS_INDEX.md) for the earlier rulings and each advisor’s vote.
-
-The [AI advisor decision history](decisions/consult_1026_amp/DECISION.md)
-preserves corrections and rejected proposals. See [export scope](EXPORT_20261026b.md)
+The [decisions index](DECISIONS_INDEX.md) lists the main rulings and how the AI
+advisors voted. See [export scope](EXPORT_20261026b.md)
 for the selected result tables and deliberately omitted inputs. Historical
 “official” scorer runs in these directories are local experiments with SEARCH
 anchors, not submitted validation scores. The scripts are a partial research

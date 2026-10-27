@@ -139,6 +139,6 @@ open questions above:
 Useful outside work would bring a faithful ranking instrument, demonstrably
 better donor transfer, or an independent recipient-context comparison with all
 six metrics. Repeating the closed parameterizations is not a new experiment.
-The [advisor record](decisions/consult_1026_amp/DECISION.md) explains why the
+The [decisions index](DECISIONS_INDEX.md) explains why the
 incumbent remains frozen; the [export note](EXPORT_20261026b.md) states what can
 and cannot be reproduced from these data-free sources.

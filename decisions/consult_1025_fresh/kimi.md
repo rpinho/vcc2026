@@ -1,4 +1,0 @@
-VERDICT: No—do not spend 11 days. There is no actionable official upside: the entry is immutable, scoring is likely closed, and this benchmark is neither D/E/F nor an official scorer.
-NEXT ACTION: Archive the entry, code, environment, seeds, and metrics; write a postmortem naming the three untried levers. Revisit only with reopened scoring or a separately approved research objective.
-FORBIDDEN: Replacing the final entry, presenting benchmark gains as official gains, leakage-contaminated evaluation, or downloads that threaten the 30-GiB reserve.
-SUCCESS TEST: Closeout passes when the published artifact’s checksum is unchanged, its run manifest and outputs are archived, and the storage reserve is maintained; any revival requires a new decision the benchmark can actually affect.

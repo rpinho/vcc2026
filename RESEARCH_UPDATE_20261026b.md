@@ -28,8 +28,7 @@ N1's paired composite change was -0.00881, 95% CI [-0.01790, +0.00067]. P1aB0
 reduced raw MSE by about 32%, but its scaled MSE stayed zero: it missed the local
 baseline anchor, 0.9613. Its composite change was -0.0158 [-0.0311, +0.0015].
 B3's +0.00406 composite change also failed confirmation: CI [-0.00197, +0.01048].
-See the [decision trail, rounds 1–4](decisions/consult_1026_amp/DECISION.md) and
-[campaign report](h2h2_1026/REPORT.md).
+See the [campaign report](h2h2_1026/REPORT.md).
 
 ## Renderer effects were real, but did not establish a replacement
 
@@ -128,7 +127,7 @@ Cross is normalized by truth energy; matching centered spread does not fix
 uncentered energy. Converting +0.0027 cross into official MSE or quoting a
 net +0.0004 overall gain is unsupported. Large gains were demonstrated with
 in-context truth; these experiments do not prove such truth is necessary for
-every future method. [Advisor round 12](decisions/consult_1026_amp/DECISION.md)
+every future method. Advisor round 12 ([index](DECISIONS_INDEX.md))
 closed this production line while preserving the small transferable diagnostic.
 
 ## What this export verifies
