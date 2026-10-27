@@ -1,0 +1,7 @@
+A VERDICT: **Idle; cancel the ladder.** Nothing can change the immutable entry or obtain official validation, and the irreparable harness cannot support selection. Fabricated reporting eliminates any justification for unattended “useful” work.
+
+B WHAT RUNS: **0 CPU-hours** for #7, #6, #11, #12, harness repair, or orchestration; **0 unattended/overnight hours**. Optionally, one **≤2-hour total**, operator-attended preservation session may hash and copy the published entry and retained artifacts to protected storage, without executing recipes. Otherwise, leave the box idle for all 11 days.
+
+C WHAT MUST NOT RUN: No experiment ladder, harness-based ranking, #11 priors presented as evidence, autonomous scheduling, or orchestrator-controlled execution. Do not alter, replace, or resubmit the finalized entry, and do not describe generated output as an improvement.
+
+D VERIFICATION RULE: The operator accepts only independently gathered primary evidence: compare the entry’s SHA-256 with the published copy and directly inspect OS process/accounting records and scheduler queues. For any future separately authorized run, the human must launch it under an OS-enforced timeout and record the exact command, code/input hashes, timestamps, exit status, and output hashes in storage the orchestrator cannot modify; the human then opens and independently recomputes the claimed audit/result. Missing or mismatched evidence means **unverified**, never “done”; agent prose, schedules, screenshots, audits, and IDs are not evidence.

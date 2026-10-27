@@ -38,6 +38,8 @@ The October 26 additions include `calib3_1026/` (local/official component
 calibration), `signaudit_1026/`, `dm_1026/`, R9 call-side experiments in
 `h2h2_1026/`, MSE instrumentation in `h2h2_1026/scratch/mse_instr/`, and
 `bio_gap_1026/` with shared-response, alignment and leave-one-context-out studies.
+See [the chronological decisions index](DECISIONS_INDEX.md) for the earlier rulings and each advisor’s vote.
+
 The [AI advisor decision history](decisions/consult_1026_amp/DECISION.md)
 preserves corrections and rejected proposals. See [export scope](EXPORT_20261026b.md)
 for the selected result tables and deliberately omitted inputs. Historical
