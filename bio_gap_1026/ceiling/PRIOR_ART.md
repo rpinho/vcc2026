@@ -1,0 +1,13 @@
+# Prior art and scope
+
+2026-10-27. This is a local diagnostic of the frozen B0 model, not a new predictor, benchmark entry, or record claim. The authorized method is the user's proposed cross-fitted split-half ceiling (credited to X reply by zymobyte012); the numerical baseline and metric definitions are in ../REPORT.md, ../METHODS.md, ../analyze.py, and ../runtime.py. No leaderboard reproduction or external model search is relevant to estimating this baseline's measurement reliability. No network or downloads will be used.
+
+Baseline: training168 integer-rendered B0 mean cosine 0.084, aggregate E about 1.64. Pseudobulk is log1p(50000 * pooled molecule probability) relative to global NTC, own target gene excluded. Existing moment-proxy strata use two-sample arithmetic-CPM moments and BH 0.05; they are not Wilcoxon strata.
+
+Important input limitation reported in ../METHODS.md: full H1 raw cells were deleted; only full-data aggregate summaries and a 20,000-cell H1.h5ad slice may remain. Establish raw-cell availability before any split-half estimate. Aggregate sums and two moments do not determine an actual random partition of pooled molecule counts.
+
+Spearman–Brown planned correction: R_full = 2*r_half/(1+r_half), under parallel-half independent-error assumptions. This estimates repeat-full reliability. A noiseless signal's attainable cosine to noisy full truth is approximately sqrt(R_full); these distinct interpretations must be labeled. No correction is justified without an observed split-half estimate.
+
+Attempt 2, 2026-10-27: Ricardo authorizes HTTP range reads of the single official Training h5ad URL specified in the task, superseding the earlier no-download blocker. Reuse the local Remote file adapter in ../../model_v6/remote_h5.py and the arithmetic-CPM accumulation from ../../model_sidechain/approx_acquire.py. No other network sources are authorized; no novelty or leaderboard claim is made. Splits now use a seeded hash of obs IDs rather than stored permutations, per the approved update.
+
+Attempt 3 (2026-10-27): authorization extends to the exact Validation and Test URLs in the request. No other network access is allowed, so no live literature/leaderboard search is performed. This experiment makes no novelty or score-improvement claim. All three releases are pooled only for the predetermined training168 whitelist; duplicated NTC IDs are counted once. Prior code reused: model_v6/remote_h5.py range file interface; model_sidechain/approx_acquire.py control-ID check and pooled moments; saberhq Sidechain stream_pseudobulk.py count/CPM sufficient statistics; bio_gap analyze.py normal/BH proxy and metrics.

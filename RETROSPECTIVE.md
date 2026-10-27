@@ -36,7 +36,8 @@ far off the local scorer was. So billmA stayed.
 ## The biology
 
 I think this is the interesting part. On 168 training targets, our predicted response barely pointed the right
-way. The mean cosine with the true response was 0.084. It wasn't missing data, because the targets we had
+way. The mean cosine with the true response was 0.084. Two halves of the same real data agree at about 0.65, so
+this isn't noise. We were at roughly a tenth of what's achievable ([noise ceiling](bio_gap_1026/ceiling/REPORT.md)). It wasn't missing data, because the targets we had
 source data for carried 99.5% of the error. And most fixes that lowered the error did it by shrinking the
 predictions toward zero, which the MSE part of the score doesn't reward.
 
