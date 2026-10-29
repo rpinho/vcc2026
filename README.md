@@ -11,7 +11,8 @@ when recorded. We are well behind the leading entries and would welcome help.
 Start with [lessons and concrete open questions](LESSONS_AND_HELP_WANTED.md)
 and the [builder and reproduction guide](REPRODUCING.md). Issues and PRs welcome.
 
-Start with the [full retrospective](RETROSPECTIVE.md): the official submission
+Start with the [short retro](RETRO.md): what we did, what broke, what I would do
+differently and where I think this is going. Then the [full retrospective](RETROSPECTIVE.md): the official submission
 arc, failed local improvements, harness calibration and biology diagnostics.
 The latest [October 26 afternoon/evening update](RESEARCH_UPDATE_20261026b.md)
 follows the [morning update](RESEARCH_UPDATE_20261026.md), with results and links

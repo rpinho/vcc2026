@@ -29,8 +29,8 @@ layout change was a clear win (+0.066). The official board had already scored th
 (-0.009). We had four changes scored both ways, and the local scorer got the direction right on two of them.
 That's a coin flip. ([calibration](calib3_1026/REPORT.md))
 
-We kept trying things anyway: gene networks, magnitude and direction calibration, more DE calls, fewer DE
-calls, renderer changes, amplitude changes. Some looked good locally. None held up once we corrected for how
+We kept trying things anyway, mostly magnitude and direction calibration, plus more DE calls, fewer DE
+calls, renderer changes, amplitude changes and a small test of network features. Some looked good locally. None held up once we corrected for how
 far off the local scorer was. So billmA stayed.
 
 ## The biology
